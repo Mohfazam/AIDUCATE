@@ -24,7 +24,6 @@ import {
   Pie,
   Cell,
   CartesianGrid,
-  Legend,
 } from "recharts";
 
 const roadmap = [
@@ -376,7 +375,7 @@ export default function LearningResources() {
                       }
                       labelLine={{ stroke: "#fff" }}
                     >
-                      {pieData.map((entry, index) => (
+                      {pieData.map((_entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}

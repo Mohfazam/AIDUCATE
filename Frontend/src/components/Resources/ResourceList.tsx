@@ -312,7 +312,7 @@ export default function ResourceList({
 
   // LineChart data for step completion progress
   const lineChartData = useMemo(() => {
-    return learningPaths.dsa[0].steps.map((step, index) => ({
+    return learningPaths.dsa[0].steps.map((step) => ({
       name: step.name,
       completion: completedSteps.includes(step.name) ? 100 : 0,
     }));
