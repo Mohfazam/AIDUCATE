@@ -4,35 +4,43 @@ import { Linkedin, Twitter, User } from 'lucide-react';
 export const Team = () => {
   const teamMembers = [
     {
-      name: 'Md Mubashiruddin',
-      role: 'Team Lead',
-      bio: "Expert in implementing complex features and maintaining code quality through rigorous development practices.",
-      social: { linkedin: 'https://www.linkedin.com/in/md-mubashiruddin/', twitter: 'https://x.com/amaanx_6' },
-      leadership: true,
-      icon: <User className="w-12 h-12 text-white" />, // Male icon
-      color: "from-blue-600 to-indigo-500" // Blue-toned gradient for male
-    },
-    {
       name: 'Mohammad Sarwar Khan',
-      role: 'Lead Developer',
+      role: 'Team Lead',
       bio: 'Driving technical excellence in full-stack development, specializing in scalable MERN solutions and system architecture design.',
       social: { linkedin: 'https://www.linkedin.com/in/mohammed-sarwar-khan/', twitter: 'https://x.com/mohfazam' },
+      leadership: true,
       icon: <User className="w-12 h-12 text-white" />, // Male icon
       color: "from-blue-500 to-cyan-500" // Slightly different blue gradient for male
     },
     {
-      name: 'Kafia Kauser',
+      name: 'Md Mubashiruddin',
+      role: 'Frontend Developer',
+      bio: "Expert in crafting responsive and dynamic user interfaces using modern JavaScript frameworks and best UI practices.",
+      social: { linkedin: 'https://www.linkedin.com/in/md-mubashiruddin/', twitter: 'https://x.com/amaanx_6' },
+      icon: <User className="w-12 h-12 text-white" />, // Male icon
+      color: "from-blue-600 to-indigo-500" // Blue-toned gradient for male
+    },
+    {
+      name: 'Mohammed Talha Ahmed',
+      role: 'Backend Developer',
+      bio: 'Skilled in building scalable and secure server-side architectures with robust API integrations and database management.',
+      social: { linkedin: 'https://www.linkedin.com/in/mohammed-talha-ahmed-6871a42ab/', twitter: 'https://x.com/mohfazam' },
+      icon: <User className="w-12 h-12 text-white" />, // Male icon
+      color: "from-blue-500 to-cyan-500" // Slightly different blue gradient for male
+    },
+    {
+      name: 'Uzma Fatima',
       role: 'Researcher and Presenter',
       bio: 'Spearheading technology research and innovation strategies for cutting-edge solutions.',
-      social: { linkedin: 'https://www.linkedin.com/in/kafia-kauser-019647294', twitter: 'https://x.com/KauserKafia' },
+      social: { linkedin: 'https://www.linkedin.com/in/uzma-fatima-5b111629b/', twitter: 'https://x.com/KauserKafia' },
       icon: <User className="w-12 h-12 text-white" />, // Female icon
       color: "from-pink-500 to-rose-500" // Pink-toned gradient for female
     },
     {
-      name: 'Madiyah Numa',
-      role: 'Quality Assurance',
-      bio: 'Ensuring flawless user experiences through meticulous testing and quality control processes.',
-      social: { linkedin: 'https://www.linkedin.com/in/madiyah-numa-2903aa2a6', twitter: 'https://x.com/mnuma0_0' },
+      name: 'Habeeba Khatoon',
+      role: 'UI/UX Designer',
+      bio: 'Specializes in designing intuitive and user-centric interfaces that enhance usability and user satisfaction.',
+      social: { linkedin: 'ttps://www.linkedin.com/in/habeeba-khatoon18/', twitter: 'https://x.com/mnuma0_0' },
       icon: <User className="w-12 h-12 text-white" />, // Female icon
       color: "from-rose-600 to-pink-400" // Slightly different pink gradient for female
     },
@@ -66,13 +74,13 @@ export const Team = () => {
             variants={textGlow}
             className="text-4xl md:text-5xl font-bold text-white"
           >
-            Cipher Syndicate
+            AIDUCATE
           </motion.h1>
           <p className="text-xl text-gray-400">Unified Excellence in Technical Innovation</p>
         </motion.div>
 
         {/* Team Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {teamMembers.map((member, index) => (
             <motion.div
               key={index}
@@ -107,7 +115,7 @@ export const Team = () => {
                     {member.name}
                   </h3>
                   
-                  <p className="text-sm text-blue-400 font-medium mb-4 uppercase tracking-wide">
+                  <p className="text-sm text-blue-400 font-medium mb-4 uppercase text-center tracking-wide">
                     {member.role}
                   </p>
                   

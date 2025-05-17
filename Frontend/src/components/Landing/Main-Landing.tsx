@@ -1,9 +1,10 @@
 import { Hero } from "./Hero";
 import { Footer } from "./Footer";
-// import { Team } from "./Team";
+ import { Team } from "./Team";
 import { Features } from "./Features";
 import { Navbar } from "../Navbar";
-import {Home} from 'lucide-react'
+import {Home} from 'lucide-react';
+//import { Testimonials } from "./Testimonial";
 
 export function MainLanding() {
   return (
@@ -13,7 +14,7 @@ export function MainLanding() {
       </div>
       <Hero />
       <Features />
-      {/* <Team /> */}
+      <Team />
       {/* <Testimonials /> */}
       <Footer />
     </div>
