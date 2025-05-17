@@ -94,13 +94,6 @@ AIDucate transforms the passive consumption of videos, blogs, and online courses
 
 ---
 
-## ✨ Personas
-
-* **Riya** – CS student overwhelmed by scattered content → AIDucate brings clarity.
-* **Arjun** – Preparing for AWS roles → AIDucate generates skill-based challenges.
-* **Fatima** – NGO educator → trains volunteers with interactive policy explainers.
-
----
 
 ## 📊 Comparison
 
