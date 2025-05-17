@@ -1016,7 +1016,7 @@ export default function QuizSection() {
                         }`}
                         aria-label="Next question"
                       >
-                        <span>Next</span>
+                        <span>Next Question</span>
                         <ChevronRight size={20} />
                       </button>
                     )}

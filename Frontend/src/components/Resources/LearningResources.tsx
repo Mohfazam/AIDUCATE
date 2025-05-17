@@ -124,7 +124,7 @@ const faqs = [
   {
     question: "Top resources for DSA?",
     answer:
-      "Use GeeksforGeeks, Introduction to Algorithms (CLRS), competitive programming sites, and YouTube channels like mycodeschool and Abdul Bari.",
+      "use GeeksforGeeks, Introduction to Algorithms (CLRS), competitive programming sites, and YouTube channels like mycodeschool and Abdul Bari.",
     keywords: ["resources", "DSA", "GeeksforGeeks", "CLRS"],
   },
 ];

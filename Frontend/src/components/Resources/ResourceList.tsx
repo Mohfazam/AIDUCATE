@@ -38,7 +38,6 @@ import {
 import confetti from "canvas-confetti";
 
 // Resource data with tags and learning path step
-// Resource data with tags and learning path step
 const resources = {
   dsa: [
     {
@@ -521,7 +520,7 @@ export default function ResourceList({
       <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50 shadow-lg">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center">
           <Sparkles className="w-5 h-5 mr-2 text-purple-400" /> Recommended
-          Learning Path
+          Learning Path.
         </h3>
         {/* Progress Percentage */}
         <div className="mb-4">
