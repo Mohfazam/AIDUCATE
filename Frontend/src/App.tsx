@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { YouTubeLearningPortal } from './components/YouTubeInputCard';
+import { YouTubeLearningPortal } from './components/YtInput/YouTubeInputCard';
 // import { SummaryComponent } from './components/SummaryTab/SummaryTab';
 import { MainLanding } from './components/Landing/Main-Landing';
 // import { TheoryTab } from './components/SummaryTab/TheoryTab';
