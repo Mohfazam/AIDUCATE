@@ -77,6 +77,11 @@ export const Login = () => {
       if (response.data.success) {
         // Store authentication state
         localStorage.setItem('isAuthenticated', 'true');
+        // Store user data in local storage
+        localStorage.setItem('userData', JSON.stringify({
+          username,
+          ...response.data.user // Assuming the API returns user data in response.data.user
+        }));
         
         // Show success message
         toast.success('Login successful!');
