@@ -14,6 +14,7 @@ const UserModel = require("../models/UsersSchema");
 
 const app = express();
 const MONGOOSE_URL = process.env.MONGO_URL;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 mongoose
   .connect(MONGOOSE_URL)
@@ -94,7 +95,7 @@ app.post("/Summary", async (req, res) => {
     const transcript = await YoutubeTranscript.fetchTranscript(videoId);
     const transcriptText = transcript.map(item => item.text).join(" ");
 
-    const genAI = new GoogleGenerativeAI("AIzaSyDzZ9d4RMv1D2Vahew6WaPlcleHYttl6N4");
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `Provide a 200-word summary of this video transcript:\n\n${transcriptText}`;
@@ -112,6 +113,7 @@ app.post("/Summary", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log("Server is running at port 3000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running at port ${PORT}`);
 });
