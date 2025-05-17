@@ -47,11 +47,10 @@ export const Hero = () => {
   if (isAuthenticated) {
     Navigate('/input');
   } else {
-    // Send to signup page with redirect to login (which will redirect to input)
-    Navigate('/signup?redirect=/login?redirect=/input');
+    const nestedRedirect = encodeURIComponent('/login?redirect=/input');
+    Navigate(`/signup?redirect=${nestedRedirect}`);
   }
 };
-
 
 
   return (

@@ -151,14 +151,13 @@ export const Signup = () => {
     }
   };
 
-  const goToLogin = () => {
-    // If there is a redirectAfterSignup that contains login redirect, preserve it
-    if (redirectAfterSignup.startsWith('/login')) {
-      navigate(redirectAfterSignup);
-    } else {
-      navigate('/login');
-    }
-  };
+const goToLogin = () => {
+  if (redirectAfterSignup.startsWith('/login')) {
+    navigate(redirectAfterSignup);
+  } else {
+    navigate('/login');
+  }
+};
   return (
     <div className="flex items-center justify-center bg-gradient-to-br from-violet-900 via-slate-900 to-black py-12 px-4 sm:px-6 lg:px-8  h-screen w-screen">
       <ToastContainer position="top-right" autoClose={3000} />
