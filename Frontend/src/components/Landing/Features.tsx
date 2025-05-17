@@ -55,7 +55,7 @@ export const Features = () => {
             <span className="bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text"> Enhanced Learning</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Discover all the tools and features that make EduPlay the perfect platform for your learning journey.
+            Discover all the tools and features that make AIDUCATE the perfect platform for your learning journey.
           </p>
         </motion.div>
 
