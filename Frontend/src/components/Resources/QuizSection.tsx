@@ -21,7 +21,7 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import JSConfetti from "js-confetti";
 
-// Define TypeScript interfaces
+
 interface Question {
   id: number;
   difficulty: string;

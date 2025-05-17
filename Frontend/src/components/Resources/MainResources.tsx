@@ -16,7 +16,7 @@ export const MainResources = () => {
     setSelectedCategory(category);
   };
 
-  // Render content based on active tab
+
   const renderContent = () => {
     switch (activeTab) {
       case "quiz":

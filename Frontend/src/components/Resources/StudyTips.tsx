@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import { Sparkles, Bookmark } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Sparkles, Bookmark } from "lucide-react";
 
 interface Tip {
   emoji: string;
@@ -13,20 +13,43 @@ interface TrendingTopic {
 }
 
 const tips: Tip[] = [
-  { emoji: '💡', tip: 'Break down complex problems into smaller, manageable pieces' },
-  { emoji: '🚀', tip: 'Practice coding regularly, even if just for 30 minutes a day' },
-  { emoji: '📚', tip: 'Read documentation thoroughly before starting a new project' },
-  { emoji: '🎯', tip: 'Focus on understanding concepts rather than memorizing solutions' },
-  { emoji: '🤝', tip: 'Join coding communities and participate in discussions' },
-  { emoji: '✍️', tip: 'Document your code and maintain a learning journal' },
-  { emoji: '🔄', tip: 'Review and refactor your code regularly' },
-  { emoji: '⏰', tip: 'Set specific learning goals with deadlines' },
+  {
+    emoji: "💡",
+    tip: "Break down complex problems into smaller, manageable pieces",
+  },
+  {
+    emoji: "🚀",
+    tip: "Practice coding regularly, even if just for 30 minutes a day",
+  },
+  {
+    emoji: "📚",
+    tip: "Read documentation thoroughly before starting a new project",
+  },
+  {
+    emoji: "🎯",
+    tip: "Focus on understanding concepts rather than memorizing solutions",
+  },
+  {
+    emoji: "🤝",
+    tip: "Join coding communities and participate in discussions",
+  },
+  { emoji: "✍️", tip: "Document your code and maintain a learning journal" },
+  { emoji: "🔄", tip: "Review and refactor your code regularly" },
+  { emoji: "⏰", tip: "Set specific learning goals with deadlines" },
 ];
 
 const trendingTopics: TrendingTopic[] = [
-  { title: 'React Hooks Deep Dive', views: '2.5k', category: 'Web Development' },
-  { title: 'System Design Fundamentals', views: '1.8k', category: 'Architecture' },
-  { title: 'GraphQL vs REST', views: '1.2k', category: 'API Design' },
+  {
+    title: "React Hooks Deep Dive",
+    views: "2.5k",
+    category: "Web Development",
+  },
+  {
+    title: "System Design Fundamentals",
+    views: "1.8k",
+    category: "Architecture",
+  },
+  { title: "GraphQL vs REST", views: "1.2k", category: "API Design" },
 ];
 
 export default function StudyTips() {
@@ -60,7 +83,6 @@ export default function StudyTips() {
         </div>
       </div>
 
-      {/* Study Tips */}
       <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
         <h2 className="text-xl font-bold mb-6">Study Tips</h2>
         <div className="space-y-4">
