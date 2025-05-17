@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Loader } from 'lucide-react';
+import { ArrowRight, Loader,MoveLeft }from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -66,9 +66,19 @@ export const YouTubeLearningPortal = () => {
         className="w-full max-w-4xl bg-gray-800 rounded-2xl p-8 shadow-2xl"
       >
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">
-            YouTube Video Processor
-          </h1>
+             <div className="flex items-center justify-evenly gap-4 mb-2">
+      <button
+        onClick={() => navigate('/')}
+        className="text-gray-300 items-start hover:text-white"
+      >
+        <MoveLeft className="w-10 h-10" />
+      </button>
+      <h1 className="text-4xl font-bold text-white">
+        YouTube Video Processor
+      </h1>
+      <div></div>
+    </div>
+
           <p className="text-gray-400">Enter a YouTube URL to continue</p>
         </div>
 

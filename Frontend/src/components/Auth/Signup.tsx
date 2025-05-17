@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
@@ -18,6 +18,9 @@ export const Signup = () => {
   const [error, setError] = useState('');
   const [passwordStrength, setPasswordStrength] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const redirectAfterSignup = params.get('redirect') || '/login';
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -64,7 +67,7 @@ export const Signup = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Check password strength when password field changes
     if (name === 'password') {
       const strength = calculatePasswordStrength(value);
@@ -74,21 +77,21 @@ export const Signup = () => {
 
   const calculatePasswordStrength = (password: string): number => {
     let strength = 0;
-    
+
     if (password.length >= 8) strength += 1;
     if (/[A-Z]/.test(password)) strength += 1;
     if (/[0-9]/.test(password)) strength += 1;
     if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-    
+
     return strength;
   };
 
   const getStrengthColor = () => {
-    if (passwordStrength === 0) return 'bg-gray-300';
-    if (passwordStrength === 1) return 'bg-red-500';
-    if (passwordStrength === 2) return 'bg-yellow-500';
-    if (passwordStrength === 3) return 'bg-blue-500';
-    return 'bg-green-500';
+    if (passwordStrength === 0) return 'text-gray-300';
+    if (passwordStrength === 1) return 'text-red-500';
+    if (passwordStrength === 2) return 'text-yellow-500';
+    if (passwordStrength === 3) return 'text-blue-500';
+    return 'text-green-500';
   };
 
   const getStrengthText = () => {
@@ -102,7 +105,7 @@ export const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     // Basic validation
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields');
@@ -132,10 +135,10 @@ export const Signup = () => {
       if (response.status === 200) {
         // Show success message
         toast.success('Account created successfully!');
-        
+
         // Redirect to login after a short delay
         setTimeout(() => {
-          navigate('/login');
+          navigate(redirectAfterSignup);
         }, 1500);
       } else {
         setError(response.data.msg || 'Signup failed. Please try again.');
@@ -148,25 +151,33 @@ export const Signup = () => {
     }
   };
 
+  const goToLogin = () => {
+    // If there is a redirectAfterSignup that contains login redirect, preserve it
+    if (redirectAfterSignup.startsWith('/login')) {
+      navigate(redirectAfterSignup);
+    } else {
+      navigate('/login');
+    }
+  };
   return (
-    <div className="flex items-center justify-center bg-gradient-to-br from-violet-900 via-slate-900 to-black py-12 px-4 sm:px-6 lg:px-8 overflow-hidden h-fit w-full">
+    <div className="flex items-center justify-center bg-gradient-to-br from-violet-900 via-slate-900 to-black py-12 px-4 sm:px-6 lg:px-8  h-screen w-screen">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       {/* Background elements */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ 
+        animate={{
           opacity: [0.1, 0.2, 0.1],
           scale: [1, 1.2, 1],
         }}
-        transition={{ 
+        transition={{
           duration: 8,
           repeat: Infinity,
           repeatType: "reverse"
         }}
         className="absolute w-96 h-96 bg-blue-500 rounded-full filter blur-3xl -bottom-20 -right-20 opacity-20"
       />
-      
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -179,12 +190,12 @@ export const Signup = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-300">
             Already have an account?{' '}
-            <motion.a 
+            <motion.a
               whileHover={{ scale: 1.05 }}
-              href="#" 
+              href="#"
               onClick={(e) => {
                 e.preventDefault();
-                navigate('/login');
+               goToLogin();
               }}
               className="font-medium text-purple-400 hover:text-purple-300"
             >
@@ -192,9 +203,9 @@ export const Signup = () => {
             </motion.a>
           </p>
         </motion.div>
-        
+
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-red-500/20 border border-red-500/50 text-red-100 px-4 py-3 rounded-lg flex items-center"
@@ -203,7 +214,7 @@ export const Signup = () => {
             <span>{error}</span>
           </motion.div>
         )}
-        
+
         <motion.form variants={itemVariants} className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <motion.div variants={itemVariants}>
@@ -222,7 +233,7 @@ export const Signup = () => {
                 placeholder="Full Name"
               />
             </motion.div>
-            
+
             <motion.div variants={itemVariants}>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                 Email address
@@ -239,7 +250,7 @@ export const Signup = () => {
                 placeholder="Email address"
               />
             </motion.div>
-            
+
             <motion.div variants={itemVariants}>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Password
@@ -264,22 +275,22 @@ export const Signup = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              
+
               {formData.password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs text-gray-400">Password strength:</div>
-                    <div className="text-xs font-medium" style={{ color: getStrengthColor() }}>
+                    <div className={`text-xs font-medium ${getStrengthColor()}`}>
                       {getStrengthText()}
                     </div>
                   </div>
                   <div className="h-1 w-full bg-gray-700 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${getStrengthColor()}`} 
+                    <div
+                      className={`h-full ${getStrengthColor()}`}
                       style={{ width: `${(passwordStrength / 4) * 100}%` }}
                     ></div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <div className="flex items-center text-xs text-gray-400">
                       <Check className={`h-3 w-3 mr-1 ${/[A-Z]/.test(formData.password) ? 'text-green-500' : 'text-gray-600'}`} />
@@ -301,7 +312,7 @@ export const Signup = () => {
                 </div>
               )}
             </motion.div>
-            
+
             <motion.div variants={itemVariants}>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
                 Confirm Password
@@ -340,9 +351,8 @@ export const Signup = () => {
               variants={buttonVariants}
               whileHover={isLoading ? {} : "hover"}
               whileTap={isLoading ? {} : "tap"}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${
-                isLoading ? "bg-purple-700" : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${isLoading ? "bg-purple-700" : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
             >
               {isLoading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -355,7 +365,7 @@ export const Signup = () => {
               {isLoading ? "Creating account..." : "Sign up"}
             </motion.button>
           </motion.div>
-          
+
           <motion.p variants={itemVariants} className="text-xs text-center text-gray-400 mt-4">
             By signing up, you agree to our Terms of Service and Privacy Policy
           </motion.p>

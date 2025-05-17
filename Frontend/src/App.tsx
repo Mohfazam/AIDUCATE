@@ -14,11 +14,13 @@ import { Signup } from './components/Auth/Signup';
 import { Login } from './components/Auth/Login';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { TheoryContent } from './components/Content/TheoryContent';
+// import { CustomCursor } from './components/CustomCursor';
 
 const App: React.FC = () => {
   return (
     <Router>
       <div className="app-container">
+         {/* <CustomCursor/> */}
         <Routes>
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />

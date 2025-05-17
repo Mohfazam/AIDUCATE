@@ -42,10 +42,16 @@ export const Hero = () => {
     }
   };
 
-   const handleGetStarted = () => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    Navigate(isAuthenticated ? '/input' : '/signup');
-  };
+  const handleGetStarted = () => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  if (isAuthenticated) {
+    Navigate('/input');
+  } else {
+    // Send to signup page with redirect to login (which will redirect to input)
+    Navigate('/signup?redirect=/login?redirect=/input');
+  }
+};
+
 
 
   return (
@@ -92,7 +98,7 @@ export const Hero = () => {
           className="text-center"
         >
           <motion.div variants={itemVariants}>
-            <h1 className="text-6xl md:text-7xl font-bold text-white mb-8">
+            <h1 className="text-6xl md:text-7xl mt-10 font-bold text-white mb-8">
               Learning Made 
               <span className="bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text"> Playful</span>
             </h1>
