@@ -55,7 +55,7 @@ const trendingTopics: TrendingTopic[] = [
 export default function StudyTips() {
   return (
     <aside className="space-y-8 sticky top-8">
-      {/* Trending Topics */}
+      {/* Trending Topics **/}
       <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
         <div className="flex items-center space-x-2 mb-6">
           <Sparkles className="w-5 h-5 text-yellow-400" />

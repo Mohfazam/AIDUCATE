@@ -37,7 +37,8 @@ import {
 } from "recharts";
 import confetti from "canvas-confetti";
 
-
+// Resource data with tags and learning path step
+// Resource data with tags and learning path step
 const resources = {
   dsa: [
     {

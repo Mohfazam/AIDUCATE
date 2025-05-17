@@ -43,7 +43,7 @@ export const MainResources = () => {
       <Navbar title="Resources" icon={BookOpen} />
       <main className="flex-grow overflow-y-auto p-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Sidebar */}
+          {/* Left Sidebar **/}
           <div className="lg:col-span-1 space-y-8">
             <ResourceCategories
               selectedCategory={selectedCategory}

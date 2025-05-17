@@ -55,7 +55,7 @@ const QuizInsights: React.FC<{
   ];
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
-  // Rotate motivational tips every 10 seconds
+  // Rotate motivational Tips every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTipIndex((prev) => (prev + 1) % motivationalTips.length);

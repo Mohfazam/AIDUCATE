@@ -1,4 +1,4 @@
-//LearningResources Page
+
 import {
   ChevronDown,
   ChevronUp,
@@ -118,7 +118,7 @@ const faqs = [
   {
     question: "How to practice coding effectively?",
     answer:
-      "Set regular practice time, use LeetCode or HackerRank, start with easy problems, increase difficulty, and review/optimize solutions.",
+      "setgit add Frontend/src/components/Resources/ResourceList.tsx regular practice time, use LeetCode or HackerRank, start with easy problems, increase difficulty, and review/optimize solutions.",
     keywords: ["practice", "coding", "LeetCode", "HackerRank"],
   },
   {
