@@ -21,6 +21,26 @@ export function Dashboard() {
     ],
   };
 
+  // Generate a random rank for the user (1 to 5)
+  const userRank = Math.floor(Math.random() * 5) + 1;
+
+  // Define base leaderboard data without the user
+  const baseLeaderboardData = [
+    { rank: 0, name: 'Sarah Chen', xp: 4850, change: 'up' },
+    { rank: 0, name: 'Mike Smith', xp: 3600, change: 'up' },
+    { rank: 0, name: 'Emma Davis', xp: 3400, change: 'down' },
+    { rank: 0, name: 'James Wilson', xp: 3200, change: 'up' },
+  ];
+
+  // Insert user into leaderboard with random rank
+  const leaderboardData = [
+    { rank: userRank, name: userData.username || 'Guest User', xp: 3750, change: 'same' },
+    ...baseLeaderboardData.map((player, index) => ({
+      ...player,
+      rank: (userRank + index + 1) % 5 + 1, // Assign unique ranks, avoiding user's rank
+    })),
+  ].sort((a, b) => a.rank - b.rank); // Sort by rank to ensure 1, 2, 3, 4, 5 order
+
   const statsData = {
     quizzesCompleted: 48,
     accuracy: 92,
@@ -62,6 +82,7 @@ export function Dashboard() {
         duration: '20 mins',
       },
     ],
+    leaderboardData, // Include updated leaderboardData
   };
 
   return (
