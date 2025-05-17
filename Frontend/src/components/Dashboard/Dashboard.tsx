@@ -4,12 +4,16 @@ import { StatsCard } from './StatsCard';
 import { Navbar } from '../Navbar';
 
 export function Dashboard() {
+  // Fetch user data from local storage
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+
+  // Map userData to profileData, with fallback values
   const profileData = {
-    name: 'Kafia',
-    email: 'Kafia@gmail.com',
-    memberSince: '12-03-2025',
-    subscriptionStatus: 'Premium' as const,
-    badges: [
+    name: userData.username || 'Guest User',
+    email: userData.email || 'user@example.com',
+    memberSince: userData.memberSince || new Date().toLocaleDateString('en-GB').split('/').reverse().join('-'),
+    subscriptionStatus: userData.subscriptionStatus || 'Basic',
+    badges: userData.badges || [
       { name: 'Quiz Master', icon: Award, color: 'bg-yellow-400/10 text-yellow-400' },
       { name: 'Code Explorer', icon: Code, color: 'bg-blue-400/10 text-blue-400' },
       { name: 'Fast Learner', icon: Brain, color: 'bg-purple-400/10 text-purple-400' },
