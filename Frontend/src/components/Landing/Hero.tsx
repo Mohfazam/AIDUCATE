@@ -42,6 +42,12 @@ export const Hero = () => {
     }
   };
 
+   const handleGetStarted = () => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    Navigate(isAuthenticated ? '/input' : '/signup');
+  };
+
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20">
       {/* Background gradient */}
@@ -101,7 +107,7 @@ export const Hero = () => {
           >
             <motion.button
               variants={buttonVariants}
-              onClick={() => Navigate("/input")}
+               onClick={handleGetStarted}
               whileHover="hover"
               whileTap="tap"
               className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white font-semibold text-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300"

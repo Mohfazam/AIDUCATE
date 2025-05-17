@@ -1,8 +1,14 @@
 import { motion } from 'framer-motion';
-import { Trophy, Users, Brain, BarChart as ChartBar, Gift, Sparkles } from 'lucide-react';
+import { Trophy,Rocket, Users, Brain, BarChart as ChartBar, Gift } from 'lucide-react';
 
 export const Features = () => {
   const features = [
+    {
+      icon: <Rocket className="w-8 h-8 text-indigo-400" />,
+      title: "Smart Learning Roadmap",
+      description: "Engage with personalized learning paths tailored to your pace, strengths, and goals—making every step count.",
+      items: ["Guided Roadmap", "Summarized Documentation", "Practice Problems", "Real-World Applications"]
+    },
     {
       icon: <Trophy className="w-8 h-8 text-yellow-400" />,
       title: "Gamification Mechanics",
@@ -33,12 +39,12 @@ export const Features = () => {
       description: "Track your progress with detailed analytics and identify areas for improvement.",
       items: ["Progress Tracking", "Skill Analysis", "Performance Metrics", "Learning Insights"]
     },
-    {
-      icon: <Sparkles className="w-8 h-8 text-indigo-400" />,
-      title: "AI-Powered Support",
-      description: "Get personalized assistance and recommendations powered by advanced AI technology.",
-      items: ["24/7 AI Tutor", "Smart Recommendations", "Personalized Path", "Instant Feedback"]
-    }
+    // {
+    //   icon: <Sparkles className="w-8 h-8 text-indigo-400" />,
+    //   title: "AI-Powered Support",
+    //   description: "Get personalized assistance and recommendations powered by advanced AI technology.",
+    //   items: ["24/7 AI Tutor", "Smart Recommendations", "Personalized Path", "Instant Feedback"]
+    // }
   ];
 
   return (
