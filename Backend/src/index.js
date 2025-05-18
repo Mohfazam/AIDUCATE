@@ -14,6 +14,7 @@ const UserModel = require("../models/UsersSchema");
 
 const app = express();
 const MONGOOSE_URL = process.env.MONGO_URL;
+const KEY1 = process.env.KEY1;
 
 mongoose
   .connect(MONGOOSE_URL)
@@ -94,7 +95,7 @@ app.post("/Summary", async (req, res) => {
     const transcript = await YoutubeTranscript.fetchTranscript(videoId);
     const transcriptText = transcript.map(item => item.text).join(" ");
 
-    const genAI = new GoogleGenerativeAI("AIzaSyDzZ9d4RMv1D2Vahew6WaPlcleHYttl6N4");
+    const genAI = new GoogleGenerativeAI(KEY1);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `Provide a 200-word summary of this video transcript:\n\n${transcriptText}`;
@@ -111,6 +112,81 @@ app.post("/Summary", async (req, res) => {
     });
   }
 });
+
+app.post("/SummaryMain", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY1);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Analyze this video transcript and format the response EXACTLY like this between triple quotes:
+    """
+    Title: [Generated Course Title]
+    Duration: [HH:MM:SS]
+    Topics: [Number] Topics
+    Points: [Number] Total Points
+    ---
+    KEY TOPICS:
+    - [Topic 1]
+    - [Topic 2]
+    - [Topic...]
+    """
+    
+    Requirements:
+    1. Create a concise 5-7 word course title
+    2. Convert total video length to HH:MM:SS
+    3. Count distinct main topics
+    4. Generate points between 150-300 if not specified
+    5. List key topics as bullet points
+    
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt);
+    const rawOutput = await result.response.text();
+
+    // Parse components
+    const parseSection = (text, pattern) => text.match(pattern)?.[1]?.trim() || null;
+    
+    const title = parseSection(rawOutput, /Title:\s*(.*?)(\n|$)/i);
+    const duration = parseSection(rawOutput, /Duration:\s*(.*?)(\n|$)/i);
+    const topics = parseSection(rawOutput, /Topics:\s*(\d+).*?Topics/i);
+    const points = parseSection(rawOutput, /Points:\s*(\d+).*?Points/i);
+
+    // Generate random points if not found (150-300 range)
+    const randomPoints = Math.floor(Math.random() * 151) + 150; // 150-300
+    
+    // Parse key topics
+    const topicsSection = rawOutput.split('KEY TOPICS:')[1] || '';
+    const keyTopics = topicsSection.split('\n')
+      .filter(line => line.trim().startsWith('-'))
+      .map(line => line.replace(/^-/, '').trim())
+      .filter(Boolean);
+
+    // Fallback title from first 5 transcript words
+    const fallbackTitle = transcriptText.split(/\s+/).slice(0, 5).join(' ') + '...';
+
+    res.status(200).json({
+      success: true,
+      title: title || fallbackTitle,
+      duration: duration || transcript[transcript.length-1]?.offsetAsString || "00:00:00",
+      topics: topics || String(keyTopics.length || 0),
+      points: points || String(randomPoints),
+      keyTopics: keyTopics.length > 0 ? keyTopics : ["No key topics identified"]
+    });
+
+  } catch (error) {
+    console.error("Summary error:", error);
+    res.status(500).json({
+      error: "Failed to generate summary",
+      message: error.message
+    });
+  }
+});
+
+
 
 app.listen(3000, () => {
   console.log("Server is running at port 3000");
