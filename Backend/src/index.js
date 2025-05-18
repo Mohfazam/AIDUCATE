@@ -267,6 +267,104 @@ app.post("/SummarySubPoints", async (req, res) => {
 });
 
 
+//CODE DOJO
+
+app.post("/CodeDojoEasy", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY1);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 3 easy-level coding problems with solutions based on this transcript.
+    For each problem include:
+    1. Title
+    2. Problem description
+    3. Sample input/output
+    4. Solution function
+    Format EXACTLY like this between triple quotes:
+    """
+    Problem 1:
+    Title: [Problem Name]
+    Description: [2-3 sentence challenge]
+    Sample Input: [Example input]
+    Sample Output: [Expected output]
+    Solution:
+    function exampleSolution(input) {
+        // Implementation
+    }
+    """
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt);
+    const rawOutput = await result.response.text();
+
+    // Parse problems
+    const problemSections = rawOutput.split('"""').filter(s => s.trim());
+    const problems = [];
+
+    problemSections.forEach(section => {
+      const lines = section.split('\n').filter(line => line.trim());
+      
+      const problem = {
+        title: null,
+        description: null,
+        sampleInput: null,
+        sampleOutput: null,
+        solution: []
+      };
+
+      let currentField = null;
+      
+      lines.forEach(line => {
+        if (line.startsWith('Title:')) {
+          problem.title = line.replace('Title:', '').trim();
+        } else if (line.startsWith('Description:')) {
+          problem.description = line.replace('Description:', '').trim();
+        } else if (line.startsWith('Sample Input:')) {
+          problem.sampleInput = line.replace('Sample Input:', '').trim();
+        } else if (line.startsWith('Sample Output:')) {
+          problem.sampleOutput = line.replace('Sample Output:', '').trim();
+        } else if (line.startsWith('function')) {
+          problem.solution.push(line.trim());
+        } else if (line.startsWith('}')) {
+          problem.solution.push(line.trim());
+        } else if (problem.solution.length > 0) {
+          problem.solution.push(line.trim());
+        }
+      });
+
+      if (problem.title && problem.description) {
+        problem.solution = problem.solution.join('\n');
+        problems.push(problem);
+      }
+    });
+
+    
+    const finalProblems = problems.slice(0, 3).map(p => ({
+      title: p.title || "Coding Challenge",
+      description: p.description || "Solve this programming problem",
+      sampleInput: p.sampleInput || "No input provided",
+      sampleOutput: p.sampleOutput || "Expected output",
+      solution: p.solution || "// No solution generated"
+    }));
+
+    res.status(200).json({
+      success: true,
+      problems: finalProblems
+    });
+
+  } catch (error) {
+    console.error("CodeDojo error:", error);
+    res.status(500).json({
+      error: "Failed to generate problems",
+      message: error.message
+    });
+  }
+});
+
 
 app.listen(3000, () => {
   console.log("Server is running at port 3000");
