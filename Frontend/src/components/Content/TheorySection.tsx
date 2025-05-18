@@ -10,8 +10,8 @@ interface TheorySectionProps {
 }
 
 export function TheorySection({ section, index, isActive, onToggle }: TheorySectionProps) {
-  // @ts-ignore
-  const randomPoints = Math.floor(Math.random() * 11) + 20;
+  const randomInt = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -51,7 +51,7 @@ export function TheorySection({ section, index, isActive, onToggle }: TheorySect
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-teal-900/20 rounded-full">
             <Award className="w-4 h-4 text-teal-400" />
             <span className="text-sm font-medium text-teal-300">
-              {section.theory.points} pts
+              {section.theory.points || randomInt} pts
             </span>
           </div>
           <motion.div
@@ -98,7 +98,7 @@ export function TheorySection({ section, index, isActive, onToggle }: TheorySect
                 </div>
                 <div className="ml-auto px-4 py-2 bg-teal-900/30 rounded-lg border border-teal-800/30">
                   <span className="text-sm font-medium text-teal-300">
-                    {section.theory.points} Points
+                    {section.theory.points || randomInt} Points
                   </span>
                 </div>
               </div>
