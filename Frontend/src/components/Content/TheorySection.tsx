@@ -10,6 +10,7 @@ interface TheorySectionProps {
 }
 
 export function TheorySection({ section, index, isActive, onToggle }: TheorySectionProps) {
+  const randomPoints = Math.floor(Math.random() * 11) + 20;
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -70,8 +71,8 @@ export function TheorySection({ section, index, isActive, onToggle }: TheorySect
                     {section.theory.badge.split(' ').slice(1).join(' ')}
                   </span>
                 </div>
-                <div className="ml-auto px-3 py-1 bg-purple-500/20 rounded-full">
-                  <span className="text-sm font-medium text-purple-300">
+                <div className="ml-auto px-4 py-2 bg-teal-900/30 rounded-lg border border-teal-800/30">
+                  <span className="text-sm font-medium text-teal-300">
                     {section.theory.points} Points
                   </span>
                 </div>

@@ -72,10 +72,16 @@ export const Navbar = ({ title, icon: Icon }: NavProps) => {
     setIsAuthenticated(!!authStatus);
   }, []);
 
-  const handleNavigation = (path: string) => {
+ const handleNavigation = (path: string) => {
+  const authStatus = localStorage.getItem('isAuthenticated');
+  if (authStatus) {
     navigate(path);
-    setIsMobileMenuOpen(false);
-  };
+  } else {
+    navigate('/signup');
+  }
+  setIsMobileMenuOpen(false);
+};
+
 
   return (
     <motion.nav
