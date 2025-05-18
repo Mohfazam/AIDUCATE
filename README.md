@@ -1,77 +1,122 @@
-# EduPlay: Gamified Learning Platform
 
- Learning Made Playful
- 
-To transform traditional learning into an engaging, interactive, and fun experience through gamification. EduPlay helps students and professionals develop skills while enjoying the process.
+# 🧠 AIDucate
 
----
+> **Your interactive GenAI-powered learning companion.**
 
-## **Features**
- 
-### **1. InstantQuiz**
-- **Highlight Any Digital Text:** Generate quizzes from PDFs, articles, or textbooks.  
-- **AI-Powered Quiz Generation:** Create MCQs, flashcards, and fill-in-the-blanks instantly.  
-- **Track Progress:** Spaced repetition reminders and shareable quizzes.
+AIDucate transforms the passive consumption of videos, blogs, and online courses into **active, engaging, and gamified learning experiences** — personalized to each user’s needs.
 
-### **2. Social Learning**
-- **Collaborate with Peers:** Join team challenges and discuss topics in forums.  
-- **Team Challenges:** Work together to complete group tasks and earn rewards.  
-- **Discussion Forums:** Share insights, ask questions, and engage with the community.
 
-### **3. Interactive Content**
-- **Interactive Quizzes with Feedback:** Engage with quizzes that provide instant feedback.  
-- **Simulations and Role-Playing:** Experience real-world scenarios for practical learning.  
-- **Multimedia Content:** Learn through videos, animations, and infographics.  
-- **Real-World Scenarios:** Apply knowledge in simulated environments.
+## 📚 Features
 
-### **4. Analytics**
-- **Track Your Progress:** Monitor your learning journey with detailed reports.  
-- **Skill Gap Analysis:** Identify areas for improvement based on quiz results.  
-- **Performance Insights:** Get actionable insights to enhance your learning.  
-- **Learning Recommendations:** Receive personalized recommendations for further study.
+- 🎥 **YouTube-to-Learning Modules** – Paste a video link to auto-generate:
+  - Smart roadmap
+  - Context-based challenges
+  - Practice problems with validation
+  - Real-world applications
 
-### **5. Rewards**
-- **Earn Virtual Currency:** Collect coins or tokens for completing tasks.  
-- **Unlock Exclusive Content:** Access advanced lessons or exclusive content by achieving milestones.
+- 📄 **Content Adaptation** – Works with blogs, articles, transcripts, and course pages.
+
+- 🧩 **Gamified Learning Layer**
+  - Earn XP, maintain streaks, and level up
+  - Personalized learning tasks based on performance
+
+- 🤖 **AI-Powered Intelligence**
+  - Built using Llama + Gemini for dynamic adaptation
+  - Tailored to your style of learning
+
+- 📊 **Progress Tracking**
+  - Streaks, skill growth, and mastery graphs
 
 ---
 
-## **Setup Instructions**
+## 🛠 Tech Stack
 
-### **Prerequisites**
-- Node.js (v16 or higher)  
-- MongoDB Compass (for database management)  
-- OpenAI API key (for quiz generation)  
-
-## **API Endpoints**
-
-### **Authentication**
-- **Signup:** `POST /api/auth/signup`  
-  - Request Body: `{ username, email, password }`  
-  - Response: `{ message: "User created successfully", token }`  
-
-- **Signin:** `POST /api/auth/signin`  
-  - Request Body: `{ email, password }`  
-  - Response: `{ message: "Login successful", token }`  
-
-### **Quiz Generation**
-- **Generate Quiz:** `POST /api/quiz/generate`  
-  - Request Body: `{ text: "Highlighted text" }`  
-  - Response: `{ quiz: { questions: [...] } }`  
+| Layer      | Tech                      |
+|------------|---------------------------|
+| Frontend   | React + Tailwind + Vite   |
+| Extension  | TypeScript                |
+| AI Models  | Llama (Ollama), Gemini    |
+| Backend    | Node.js + Express         |
+| Database   | PostgreSQL / MongoDB      |
+| Hosting    | Vercel                    |
 
 ---
 
-## **Contributing**
+## 🌍 Use Cases
 
-We welcome contributions! Please follow these steps:
-1. Fork the repository.  
-2. Create a new branch: `git checkout -b feature/YourFeatureName`.  
-3. Commit your changes: `git commit -m "Add some feature"`.  
-4. Push to the branch: `git push origin feature/YourFeatureName`.  
-5. Open a pull request.  
+- **Students** – Turn lectures into active learning modules
+- **Professionals** – Convert blogs and docs into skill paths
+- **Corporates** – Automate onboarding and internal training
+- **NGOs/Govt** – Convert public policies into digestible guides
+- **Media** – Make news & articles interactive and memorable
 
 ---
 
-## **License**
+## 🔮 Future Roadmap
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- 📱 Mobile app with offline support
+- 🧠 AI Memory Engine (Spaced Repetition)
+- 🌐 Language localization (Bharat + global)
+- 🧩 Plugin ecosystem for LMS/orgs
+- 🎓 Career mapping through skill trees
+- 💼 Creator marketplace for custom modules
+
+---
+
+## 📦 Installation & Setup
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/your-username/aiducate.git
+   cd aiducate
+
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+
+   ```bash
+   npm run dev
+   ```
+
+4. **Backend Setup**
+
+   * Configure `.env` for Node + Express
+   * Start backend:
+
+     ```bash
+     npm run server
+     ```
+
+---
+
+
+## 📊 Comparison
+
+| Feature                      | AIDucate | Duolingo | ChatGPT |
+| ---------------------------- | -------- | -------- | ------- |
+| Live content adaptation      | ✅        | ❌        | ✅       |
+| Auto learning module gen     | ✅        | ❌        | ❌       |
+| Personalized progression     | ✅        | ✅        | ❌       |
+| Gamified learning experience | ✅        | ✅        | ❌       |
+
+---
+
+## 🧑‍💻 Contributors
+
+Made with ❤️ by **Team Envisioneers**
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](./LICENSE).
+
+---
+
+> “The internet has enough content. It’s time we made it *stick*.”
+

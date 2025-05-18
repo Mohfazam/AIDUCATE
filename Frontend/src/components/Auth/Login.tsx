@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
@@ -13,6 +13,11 @@ export const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const params = new URLSearchParams(location.search);
+  const redirectAfterLogin = params.get('redirect') || '/';
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -59,7 +64,7 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     // Basic validation
     if (!username || !password) {
       setError('Please fill in all fields');
@@ -82,13 +87,13 @@ export const Login = () => {
           username,
           ...response.data.user // Assuming the API returns user data in response.data.user
         }));
-        
+
         // Show success message
         toast.success('Login successful!');
-        
+
         // Redirect after a short delay
         setTimeout(() => {
-          navigate('/');
+          navigate(redirectAfterLogin);
         }, 1500);
       } else {
         setError(response.data.message || 'Login failed. Please try again.');
@@ -104,22 +109,22 @@ export const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-900 via-slate-900 to-black py-12 px-4 sm:px-6 lg:px-8">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       {/* Background elements */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ 
+        animate={{
           opacity: [0.1, 0.2, 0.1],
           scale: [1, 1.2, 1],
         }}
-        transition={{ 
+        transition={{
           duration: 8,
           repeat: Infinity,
           repeatType: "reverse"
         }}
         className="absolute w-96 h-96 bg-purple-500 rounded-full filter blur-3xl top-20 -left-20 opacity-20"
       />
-      
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -132,9 +137,9 @@ export const Login = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-300">
             Or{' '}
-            <motion.a 
+            <motion.a
               whileHover={{ scale: 1.05 }}
-              href="#" 
+              href="#"
               onClick={(e) => {
                 e.preventDefault();
                 navigate('/signup');
@@ -145,9 +150,9 @@ export const Login = () => {
             </motion.a>
           </p>
         </motion.div>
-        
+
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-red-500/20 border border-red-500/50 text-red-100 px-4 py-3 rounded-lg flex items-center"
@@ -156,7 +161,7 @@ export const Login = () => {
             <span>{error}</span>
           </motion.div>
         )}
-        
+
         <motion.form variants={itemVariants} className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <motion.div variants={itemVariants}>
@@ -175,7 +180,7 @@ export const Login = () => {
                 placeholder="Username"
               />
             </motion.div>
-            
+
             <motion.div variants={itemVariants}>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Password
@@ -216,9 +221,9 @@ export const Login = () => {
               </label>
             </div>
 
-            <motion.a 
+            <motion.a
               whileHover={{ scale: 1.05 }}
-              href="#" 
+              href="#"
               className="text-sm font-medium text-purple-400 hover:text-purple-300"
             >
               Forgot your password?
@@ -232,9 +237,8 @@ export const Login = () => {
               variants={buttonVariants}
               whileHover={isLoading ? {} : "hover"}
               whileTap={isLoading ? {} : "tap"}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${
-                isLoading ? "bg-purple-700" : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${isLoading ? "bg-purple-700" : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
             >
               {isLoading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

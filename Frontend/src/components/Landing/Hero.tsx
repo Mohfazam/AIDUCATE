@@ -42,6 +42,17 @@ export const Hero = () => {
     }
   };
 
+  const handleGetStarted = () => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  if (isAuthenticated) {
+    Navigate('/input');
+  } else {
+    const nestedRedirect = encodeURIComponent('/login?redirect=/input');
+    Navigate(`/signup?redirect=${nestedRedirect}`);
+  }
+};
+
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20">
       {/* Background gradient */}
@@ -86,7 +97,7 @@ export const Hero = () => {
           className="text-center"
         >
           <motion.div variants={itemVariants}>
-            <h1 className="text-6xl md:text-7xl font-bold text-white mb-8">
+            <h1 className="text-6xl md:text-7xl mt-10 font-bold text-white mb-8">
               Learning Made 
               <span className="bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text"> Playful</span>
             </h1>
@@ -101,7 +112,7 @@ export const Hero = () => {
           >
             <motion.button
               variants={buttonVariants}
-              onClick={() => Navigate("/input")}
+               onClick={handleGetStarted}
               whileHover="hover"
               whileTap="tap"
               className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white font-semibold text-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300"
