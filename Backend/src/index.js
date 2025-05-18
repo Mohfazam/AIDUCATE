@@ -15,6 +15,7 @@ const UserModel = require("../models/UsersSchema");
 const app = express();
 const MONGOOSE_URL = process.env.MONGO_URL;
 const KEY1 = process.env.KEY1;
+const KEY2 = process.env.KEY2;
 
 mongoose
   .connect(MONGOOSE_URL)
@@ -275,10 +276,10 @@ app.post("/CodeDojoEasy", async (req, res) => {
     const transcript = await YoutubeTranscript.fetchTranscript(videoId);
     const transcriptText = transcript.map(item => item.text).join(" ");
 
-    const genAI = new GoogleGenerativeAI(KEY1);
+    const genAI = new GoogleGenerativeAI(KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const prompt = `Generate 3 easy-level coding problems with solutions based on this transcript.
+    const prompt = `Generate 3 easy coding problems with solutions based on this transcript.
     For each problem include:
     1. Title
     2. Problem description
@@ -301,66 +302,366 @@ app.post("/CodeDojoEasy", async (req, res) => {
     const result = await model.generateContent(prompt);
     const rawOutput = await result.response.text();
 
-    // Parse problems
-    const problemSections = rawOutput.split('"""').filter(s => s.trim());
-    const problems = [];
-
-    problemSections.forEach(section => {
+    
+    const easyProblems = [];
+    const easySections = rawOutput.split('"""').filter(s => s.trim());
+    
+    easySections.forEach(section => {
       const lines = section.split('\n').filter(line => line.trim());
-      
-      const problem = {
-        title: null,
-        description: null,
-        sampleInput: null,
-        sampleOutput: null,
-        solution: []
-      };
+      const problem = { title: null, description: null, sampleInput: null, sampleOutput: null, solution: [] };
 
-      let currentField = null;
-      
       lines.forEach(line => {
-        if (line.startsWith('Title:')) {
-          problem.title = line.replace('Title:', '').trim();
-        } else if (line.startsWith('Description:')) {
-          problem.description = line.replace('Description:', '').trim();
-        } else if (line.startsWith('Sample Input:')) {
-          problem.sampleInput = line.replace('Sample Input:', '').trim();
-        } else if (line.startsWith('Sample Output:')) {
-          problem.sampleOutput = line.replace('Sample Output:', '').trim();
-        } else if (line.startsWith('function')) {
-          problem.solution.push(line.trim());
-        } else if (line.startsWith('}')) {
-          problem.solution.push(line.trim());
-        } else if (problem.solution.length > 0) {
-          problem.solution.push(line.trim());
-        }
+        if (line.startsWith('Title:')) problem.title = line.replace('Title:', '').trim();
+        if (line.startsWith('Description:')) problem.description = line.replace('Description:', '').trim();
+        if (line.startsWith('Sample Input:')) problem.sampleInput = line.replace('Sample Input:', '').trim();
+        if (line.startsWith('Sample Output:')) problem.sampleOutput = line.replace('Sample Output:', '').trim();
+        if (line.startsWith('function')) problem.solution.push(line.trim());
+        if (problem.solution.length > 0 && !line.startsWith('Problem')) problem.solution.push(line.trim());
       });
 
-      if (problem.title && problem.description) {
+      if (problem.title) {
         problem.solution = problem.solution.join('\n');
-        problems.push(problem);
+        easyProblems.push(problem);
       }
     });
 
+    res.status(200).json({
+      success: true,
+      problems: easyProblems.slice(0, 3).map(p => ({
+        title: p.title || "Easy Challenge",
+        description: p.description || "Basic programming problem",
+        sampleInput: p.sampleInput || "[]",
+        sampleOutput: p.sampleOutput || "[]",
+        solution: p.solution || "// Solution not generated"
+      }))
+    });
+
+  } catch (error) {
+    console.error("Easy problems error:", error);
+    res.status(500).json({ error: "Failed to generate easy problems", message: error.message });
+  }
+});
+
+app.post("/CodeDojoMedium", async (req, res) => {
+  try {
+    const { videoId } = req.body;
     
-    const finalProblems = problems.slice(0, 3).map(p => ({
-      title: p.title || "Coding Challenge",
-      description: p.description || "Solve this programming problem",
-      sampleInput: p.sampleInput || "No input provided",
-      sampleOutput: p.sampleOutput || "Expected output",
-      solution: p.solution || "// No solution generated"
+    // Validate video ID format
+    if (!videoId.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      return res.status(400).json({ error: "Invalid YouTube video ID" });
+    }
+
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 3 medium coding problems with solutions based on this transcript.
+    Requirements:
+    - Optimization challenges
+    - Edge case handling
+    - OOP or algorithms
+    Format EXACTLY like this:
+    
+    Problem 1:
+    Title: [Problem Name]
+    Description: [Complex problem statement]
+    Sample Input: [Challenging input]
+    Sample Output: [Non-trivial output]
+    Solution:
+    class MediumSolution {
+        // Non-trivial implementation
+    }
+    
+    Problem 2:
+    Title: [Problem Name]
+    Description: [Complex problem statement]
+    Sample Input: [Challenging input]
+    Sample Output: [Non-trivial output]
+    Solution:
+    class MediumSolution {
+        // Non-trivial implementation
+    }
+    
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const rawOutput = await result.response.text();
+
+    // Enhanced parsing logic
+    const mediumProblems = [];
+    const problemBlocks = rawOutput.split(/(Problem\s+\d+:)/).filter(b => b.trim());
+    
+    let currentProblem = null;
+    problemBlocks.forEach(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      
+      if (block.startsWith('Problem')) {
+        if (currentProblem) mediumProblems.push(currentProblem);
+        currentProblem = {
+          title: null,
+          description: null,
+          sampleInput: null,
+          sampleOutput: null,
+          solution: []
+        };
+      } else if (currentProblem) {
+        lines.forEach(line => {
+          if (line.startsWith('Title:')) {
+            currentProblem.title = line.replace('Title:', '').trim();
+          } else if (line.startsWith('Description:')) {
+            currentProblem.description = line.replace('Description:', '').trim();
+          } else if (line.startsWith('Sample Input:')) {
+            currentProblem.sampleInput = line.replace('Sample Input:', '').trim();
+          } else if (line.startsWith('Sample Output:')) {
+            currentProblem.sampleOutput = line.replace('Sample Output:', '').trim();
+          } else if (line.startsWith('class') || line.includes('{') || line.includes('}')) {
+            currentProblem.solution.push(line);
+          }
+        });
+      }
+    });
+    
+    if (currentProblem && currentProblem.title) {
+      mediumProblems.push(currentProblem);
+    }
+
+    // Process solutions
+    const formattedProblems = mediumProblems.slice(0, 3).map(p => {
+      const solutionCode = p.solution.join('\n').trim();
+      return {
+        title: p.title || "Medium Coding Challenge",
+        description: p.description || "Solve this intermediate programming problem",
+        sampleInput: p.sampleInput || "{}",
+        sampleOutput: p.sampleOutput || "{}",
+        solution: solutionCode || "// Solution code not generated"
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      problems: formattedProblems
+    });
+
+  } catch (error) {
+    console.error("Medium Error:", error);
+    res.status(500).json({
+      error: "Failed to generate medium problems",
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+app.post("/CodeDojoHard", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    
+    if (!videoId.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      return res.status(400).json({ error: "Invalid YouTube video ID" });
+    }
+
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 3 hard coding problems with solutions based on this transcript.
+    Requirements:
+    - Complex algorithms (DP, graphs)
+    - Time/space optimization
+    - Multiple solutions
+    Format EXACTLY like this:
+    
+    Problem 1:
+    Title: [Problem Name]
+    Description: [Advanced problem statement]
+    Sample Input: [Complex input]
+    Sample Output: [Optimized output]
+    Solution:
+    function hardSolution(input) {
+        // Optimal implementation
+    }
+    
+    Problem 2:
+    Title: [Problem Name]
+    Description: [Advanced problem statement]
+    Sample Input: [Complex input]
+    Sample Output: [Optimized output]
+    Solution:
+    function hardSolution(input) {
+        // Optimal implementation
+    }
+    
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const rawOutput = await result.response.text();
+
+    // Enhanced parsing logic
+    const hardProblems = [];
+    const problemBlocks = rawOutput.split(/(Problem\s+\d+:)/).filter(b => b.trim());
+    
+    let currentProblem = null;
+    problemBlocks.forEach(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      
+      if (block.startsWith('Problem')) {
+        if (currentProblem) hardProblems.push(currentProblem);
+        currentProblem = {
+          title: null,
+          description: null,
+          sampleInput: null,
+          sampleOutput: null,
+          solution: []
+        };
+      } else if (currentProblem) {
+        lines.forEach(line => {
+          if (line.startsWith('Title:')) {
+            currentProblem.title = line.replace('Title:', '').trim();
+          } else if (line.startsWith('Description:')) {
+            currentProblem.description = line.replace('Description:', '').trim();
+          } else if (line.startsWith('Sample Input:')) {
+            currentProblem.sampleInput = line.replace('Sample Input:', '').trim();
+          } else if (line.startsWith('Sample Output:')) {
+            currentProblem.sampleOutput = line.replace('Sample Output:', '').trim();
+          } else if (line.startsWith('function') || line.includes('{') || line.includes('}')) {
+            currentProblem.solution.push(line);
+          }
+        });
+      }
+    });
+    
+    if (currentProblem && currentProblem.title) {
+      hardProblems.push(currentProblem);
+    }
+
+    // Process solutions
+    const formattedProblems = hardProblems.slice(0, 3).map(p => {
+      const solutionCode = p.solution.join('\n').trim();
+      return {
+        title: p.title || "Hard Coding Challenge",
+        description: p.description || "Solve this advanced programming problem",
+        sampleInput: p.sampleInput || "Complex input",
+        sampleOutput: p.sampleOutput || "Optimized output",
+        solution: solutionCode || "// Solution code not generated"
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      problems: formattedProblems
+    });
+
+  } catch (error) {
+    console.error("Hard Error:", error);
+    res.status(500).json({
+      error: "Failed to generate hard problems",
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+app.post("/CodeDojoQuiz", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    
+    // Validate video ID format
+    if (!videoId.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      return res.status(400).json({ error: "Invalid YouTube video ID" });
+    }
+
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 4-5 quiz questions with answers based on this transcript.
+    Format EXACTLY like this:
+    
+    Question 1:
+    Question: [Programming concept question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Answer: [Correct option letter]
+    Explanation: [Brief technical explanation]
+    
+    Question 2:
+    Question: [Another question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Answer: [Correct option letter]
+    Explanation: [Brief technical explanation]
+    
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const rawOutput = await result.response.text();
+
+    // Parse quiz questions
+    const quizQuestions = [];
+    const questionBlocks = rawOutput.split(/(Question\s+\d+:)/).filter(b => b.trim());
+    
+    let currentQuestion = null;
+    questionBlocks.forEach(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      
+      if (block.startsWith('Question')) {
+        if (currentQuestion) quizQuestions.push(currentQuestion);
+        currentQuestion = {
+          question: null,
+          options: [],
+          answer: null,
+          explanation: null
+        };
+      } else if (currentQuestion) {
+        lines.forEach(line => {
+          if (line.startsWith('Question:')) {
+            currentQuestion.question = line.replace('Question:', '').trim();
+          } else if (line.match(/^[A-D]\)/)) {
+            currentQuestion.options.push(line.trim());
+          } else if (line.startsWith('Answer:')) {
+            currentQuestion.answer = line.replace('Answer:', '').trim().charAt(0);
+          } else if (line.startsWith('Explanation:')) {
+            currentQuestion.explanation = line.replace('Explanation:', '').trim();
+          }
+        });
+      }
+    });
+
+    if (currentQuestion && currentQuestion.question) {
+      quizQuestions.push(currentQuestion);
+    }
+
+    // Format final output
+    const formattedQuestions = quizQuestions.slice(0, 5).map(q => ({
+      question: q.question || "Programming concept question",
+      options: q.options.length >= 4 ? q.options : ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
+      answer: q.answer || "A",
+      explanation: q.explanation || "Key concept explanation"
     }));
 
     res.status(200).json({
       success: true,
-      problems: finalProblems
+      quiz: formattedQuestions
     });
 
   } catch (error) {
-    console.error("CodeDojo error:", error);
+    console.error("Quiz Error:", error);
     res.status(500).json({
-      error: "Failed to generate problems",
-      message: error.message
+      error: "Failed to generate quiz",
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
