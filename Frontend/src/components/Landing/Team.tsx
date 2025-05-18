@@ -24,7 +24,7 @@ export const Team = () => {
       name: 'Mohammed Talha Ahmed',
       role: 'Backend Developer',
       bio: 'Skilled in building scalable and secure server-side architectures with robust API integrations and database management.',
-      social: { linkedin: 'https://www.linkedin.com/in/mohammed-talha-ahmed-6871a42ab/', twitter: 'https://x.com/mohfazam' },
+      social: { linkedin: 'https://www.linkedin.com/in/mohammed-talha-ahmed-6871a42ab/', twitter: '#' },
       icon: <User className="w-12 h-12 text-white" />, // Male icon
       color: "from-blue-500 to-cyan-500" // Slightly different blue gradient for male
     },
@@ -32,7 +32,7 @@ export const Team = () => {
       name: 'Uzma Fatima',
       role: 'Researcher and Presenter',
       bio: 'Spearheading technology research and innovation strategies for cutting-edge solutions.',
-      social: { linkedin: 'https://www.linkedin.com/in/uzma-fatima-5b111629b/', twitter: 'https://x.com/KauserKafia' },
+      social: { linkedin: 'https://www.linkedin.com/in/uzma-fatima-5b111629b/', twitter: '#' },
       icon: <User className="w-12 h-12 text-white" />, // Female icon
       color: "from-pink-500 to-rose-500" // Pink-toned gradient for female
     },
@@ -40,7 +40,7 @@ export const Team = () => {
       name: 'Habeeba Khatoon',
       role: 'UI/UX Designer',
       bio: 'Specializes in designing intuitive and user-centric interfaces that enhance usability and user satisfaction.',
-      social: { linkedin: 'ttps://www.linkedin.com/in/habeeba-khatoon18/', twitter: 'https://x.com/mnuma0_0' },
+      social: { linkedin: 'https://www.linkedin.com/in/habeeba-khatoon18/', twitter: '#' },
       icon: <User className="w-12 h-12 text-white" />, // Female icon
       color: "from-rose-600 to-pink-400" // Slightly different pink gradient for female
     },

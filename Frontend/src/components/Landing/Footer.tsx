@@ -7,7 +7,7 @@ export const Footer = () => {
     resources: ['Blog', 'Help Center', 'Guidelines'],
     legal: ['Privacy', 'Terms', 'Security'],
     social: [
-      { icon: <Github className="w-5 h-5" />, href: '#' },
+      { icon: <Github className="w-5 h-5" />, href: 'https://github.com/Mohfazam/AIDUCATE' },
       { icon: <Twitter className="w-5 h-5" />, href: '#' },
       { icon: <Linkedin className="w-5 h-5" />, href: '#' },
       { icon: <Mail className="w-5 h-5" />, href: '#' }
