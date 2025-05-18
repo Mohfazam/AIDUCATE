@@ -1,40 +1,55 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import axios from 'axios';
 
 interface Quiz {
   question: string;
   options: string[];
   correctIndex: number;
   explanation: string;
+  tips?: string[]; // Added for potential hints or guidance
 }
 
 interface CodeQuizProps {
   onXpGain: (amount: number) => void;
 }
 
+interface ApiQuiz {
+  question: string;
+  options: string[];
+  answer: string; // e.g., "A", "B"
+  explanation: string;
+  tips?: string[]; // Optional, in case API adds tips
+}
+
+interface ApiResponse {
+  success: boolean;
+  quiz: ApiQuiz[];
+}
+
 const DEFAULT_QUIZZES: Quiz[] = [
   {
     question: 'What is the time complexity of reversing an array of length n?',
-    options: [
-      'O(1)',
-      'O(n)',
-      'O(n log n)',
-      'O(n²)'
-    ],
+    options: ['O(1)', 'O(n)', 'O(n log n)', 'O(n²)'],
     correctIndex: 1,
-    explanation: 'Reversing an array requires iterating through the array to swap elements, which takes O(n) time, where n is the length of the array.'
+    explanation:
+      'Reversing an array requires iterating through the array to swap elements, which takes O(n) time, where n is the length of the array.',
+    tips: [
+      'Consider two-pointer technique for in-place reversal.',
+      'Avoid creating a new array to save space.',
+    ],
   },
   {
     question: 'In the Two Sum problem, what data structure is typically used to achieve O(n) time complexity?',
-    options: [
-      'Array',
-      'Linked List',
-      'Hash Map',
-      'Binary Tree'
-    ],
+    options: ['Array', 'Linked List', 'Hash Map', 'Binary Tree'],
     correctIndex: 2,
-    explanation: 'A Hash Map is used to store numbers and their indices, allowing constant-time lookups to find the complement of the target sum, achieving O(n) time complexity.'
+    explanation:
+      'A Hash Map is used to store numbers and their indices, allowing constant-time lookups to find the complement of the target sum, achieving O(n) time complexity.',
+    tips: [
+      'Use a hash map to trade space for time.',
+      'Check for edge cases like empty arrays.',
+    ],
   },
   {
     question: 'How can you check if a number is a palindrome without converting it to a string?',
@@ -42,12 +57,24 @@ const DEFAULT_QUIZZES: Quiz[] = [
       'Compare it with its square',
       'Reverse the digits mathematically',
       'Check if it’s divisible by 10',
-      'Use a hash map'
+      'Use a hash map',
     ],
     correctIndex: 1,
-    explanation: 'To check if a number is a palindrome, you can reverse its digits by extracting them using modulo and division operations, then compare the reversed number with the original.'
-  }
+    explanation:
+      'To check if a number is a palindrome, you can reverse its digits by extracting them using modulo and division operations, then compare the reversed number with the original.',
+    tips: [
+      'Handle negative numbers carefully.',
+      'Watch for integer overflow in languages like C++.',
+    ],
+  },
 ];
+
+// Convert answer string (e.g., "A") to correctIndex (e.g., 0)
+const answerToIndex = (answer: string): number => {
+  const index = answer.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+  if (index < 0 || index > 3) throw new Error(`Invalid answer: ${answer}`);
+  return index;
+};
 
 export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
   const [quizzes, setQuizzes] = useState<Quiz[]>(DEFAULT_QUIZZES);
@@ -71,31 +98,38 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
         }
 
         setLoading(true);
-        const response = await fetch('http://localhost:3000/coding-challenge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoId })
+        const response = await axios.post<ApiResponse>('http://localhost:3000/CodeDojoQuiz', {
+          videoId,
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.data.success) {
+          throw new Error('CodeDojoQuiz API returned success: false');
         }
 
-        const data = await response.json();
-        if (!data.quizzes || !Array.isArray(data.quizzes)) {
-          throw new Error('Invalid quizzes data format');
-        }
+        const apiQuizzes = response.data.quiz || [];
+        const validQuizzes: Quiz[] = apiQuizzes
+          .filter(
+            (quiz: ApiQuiz) =>
+              quiz.question &&
+              Array.isArray(quiz.options) &&
+              quiz.options.length === 4 &&
+              typeof quiz.answer === 'string' &&
+              quiz.explanation,
+          )
+          .map((quiz: ApiQuiz) => ({
+            question: quiz.question,
+            options: quiz.options,
+            correctIndex: answerToIndex(quiz.answer),
+            explanation: quiz.explanation,
+            tips: quiz.tips || [], // Use API tips if provided, else empty
+          }));
 
-        const validQuizzes = data.quizzes.filter((quiz: any) => 
-          quiz.question && 
-          Array.isArray(quiz.options) && 
-          typeof quiz.correctIndex === 'number'
-        );
         console.log('Fetched quizzes:', validQuizzes);
         setQuizzes([...DEFAULT_QUIZZES, ...validQuizzes]);
       } catch (err) {
         console.error('Error fetching quizzes:', err);
-        // setError(err instanceof Error ? err.message : 'Failed to fetch quizzes, showing default quizzes');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch quizzes';
+        setError(errorMessage);
         setQuizzes(DEFAULT_QUIZZES);
       } finally {
         setLoading(false);
@@ -107,10 +141,10 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
 
   const handleAnswerSelect = (index: number) => {
     if (selectedAnswer !== null) return;
-    
+
     setSelectedAnswer(index);
     setShowExplanation(true);
-    
+
     if (index === quizzes[currentQuizIndex].correctIndex) {
       onXpGain(100);
     }
@@ -169,17 +203,17 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
           className="bg-slate-800 p-6 rounded-xl shadow-lg"
         >
           <h4 className="text-lg font-medium mb-4">{quizzes[currentQuizIndex].question}</h4>
-          
+
           <div className="space-y-3">
             {quizzes[currentQuizIndex].options.map((option, index) => {
               const isCorrect = index === quizzes[currentQuizIndex].correctIndex;
               const isSelected = index === selectedAnswer;
               let bgColor = 'bg-slate-700';
-              
+
               if (selectedAnswer !== null) {
-                bgColor = isCorrect 
-                  ? 'bg-green-500/20 border-green-500' 
-                  : isSelected 
+                bgColor = isCorrect
+                  ? 'bg-green-500/20 border-green-500'
+                  : isSelected
                     ? 'bg-red-500/20 border-red-500'
                     : 'bg-slate-800';
               }
@@ -196,13 +230,12 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
                 >
                   <div className="flex items-center justify-between">
                     <span>{option}</span>
-                    {selectedAnswer !== null && (
-                      isCorrect ? (
+                    {selectedAnswer !== null &&
+                      (isCorrect ? (
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       ) : isSelected ? (
                         <XCircle className="h-5 w-5 text-red-500" />
-                      ) : null
-                    )}
+                      ) : null)}
                   </div>
                 </motion.button>
               );
@@ -220,7 +253,20 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
                 <div className="p-4 bg-slate-700/50 rounded-lg border-l-4 border-purple-500">
                   <p className="text-sm text-slate-300 mb-2 font-medium">Explanation:</p>
                   <p className="text-slate-400 text-sm">{quizzes[currentQuizIndex].explanation}</p>
-                  
+
+                  {quizzes[currentQuizIndex].tips && quizzes[currentQuizIndex].tips.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm text-slate-300 mb-2 font-medium">Pro Tips:</p>
+                      <ul className="list-disc pl-5 text-slate-400 text-sm">
+                        {quizzes[currentQuizIndex].tips.map((tip, index) => (
+                          <li key={index} className="mb-1">
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {currentQuizIndex < quizzes.length - 1 && (
                     <button
                       onClick={handleNextQuiz}
