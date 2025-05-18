@@ -16,6 +16,7 @@ const app = express();
 const MONGOOSE_URL = process.env.MONGO_URL;
 const KEY1 = process.env.KEY1;
 const KEY2 = process.env.KEY2;
+const KEY3 = process.env.KEY3;
 
 mongoose
   .connect(MONGOOSE_URL)
@@ -667,6 +668,320 @@ app.post("/CodeDojoQuiz", async (req, res) => {
 });
 
 
-app.listen(3000, () => {
+//KNOWLEDGE CHECK
+
+app.post("/KnowledgeCheckEasy", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    
+    if (!videoId.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      return res.status(400).json({ error: "Invalid YouTube video ID" });
+    }
+
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY3);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 10 easy programming quiz questions based on this transcript.
+    Format EXACTLY like this:
+    
+    Question 1:
+    Question: [Programming concept question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Correct Answer: [Letter]
+    Hint: [Brief hint]
+    
+    Question 2:
+    Question: [Another question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Correct Answer: [Letter]
+    Hint: [Brief hint]
+    
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const rawOutput = await result.response.text();
+
+
+    const questions = [];
+    const questionBlocks = rawOutput.split(/(Question\s+\d+:)/).filter(b => b.trim());
+    
+    let currentQuestion = null;
+    questionBlocks.forEach(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      
+      if (block.startsWith('Question')) {
+        if (currentQuestion) questions.push(currentQuestion);
+        currentQuestion = {
+          question: null,
+          options: [],
+          correctAnswer: null,
+          hint: null
+        };
+      } else if (currentQuestion) {
+        lines.forEach(line => {
+          if (line.startsWith('Question:')) {
+            currentQuestion.question = line.replace('Question:', '').trim();
+          } else if (line.match(/^[A-D]\)/)) {
+            currentQuestion.options.push(line.replace(/^[A-D]\)\s*/, '').trim());
+          } else if (line.startsWith('Correct Answer:')) {
+            currentQuestion.correctAnswer = line.replace('Correct Answer:', '').trim().charAt(0);
+          } else if (line.startsWith('Hint:')) {
+            currentQuestion.hint = line.replace('Hint:', '').trim();
+          }
+        });
+      }
+    });
+
+    if (currentQuestion && currentQuestion.question) {
+      questions.push(currentQuestion);
+    }
+
+    const formattedQuestions = questions.slice(0, 10).map(q => ({
+      question: q.question || "Programming concept question",
+      options: q.options.length >= 4 ? [
+        q.options[0] || "Option 1",
+        q.options[1] || "Option 2",
+        q.options[2] || "Option 3",
+        q.options[3] || "Option 4"
+      ] : ["Option 1", "Option 2", "Option 3", "Option 4"],
+      correctAnswer: q.correctAnswer || "A",
+      hint: q.hint || "Review basic array concepts"
+    }));
+
+    res.status(200).json({
+      success: true,
+      questions: formattedQuestions
+    });
+
+  } catch (error) {
+    console.error("Knowledge Check Error:", error);
+    res.status(500).json({
+      error: "Failed to generate quiz",
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+app.post("/KnowledgeCheckMedium", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    
+    if (!videoId.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      return res.status(400).json({ error: "Invalid YouTube video ID" });
+    }
+
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY3);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 10 medium-difficulty programming quiz questions based on this transcript.
+    Format EXACTLY like this:
+    
+    Question 1:
+    Question: [Intermediate concept question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Correct Answer: [Letter]
+    Explanation: [Technical explanation]
+    
+    Question 2:
+    Question: [Algorithm analysis question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Correct Answer: [Letter]
+    Explanation: [Technical explanation]
+    
+    Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const rawOutput = await result.response.text();
+
+    // Medium-specific parsing
+    const mediumQuestions = [];
+    const questionBlocks = rawOutput.split(/(Question\s+\d+:)/).filter(b => b.trim());
+    
+    let currentQuestion = null;
+    questionBlocks.forEach(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      
+      if (block.startsWith('Question')) {
+        if (currentQuestion) mediumQuestions.push(currentQuestion);
+        currentQuestion = {
+          question: null,
+          options: [],
+          correctAnswer: null,
+          explanation: null
+        };
+      } else if (currentQuestion) {
+        lines.forEach(line => {
+          if (line.startsWith('Question:')) {
+            currentQuestion.question = line.replace('Question:', '').trim();
+          } else if (line.match(/^[A-D]\)/)) {
+            currentQuestion.options.push(line.replace(/^[A-D]\)\s*/, '').trim());
+          } else if (line.startsWith('Correct Answer:')) {
+            currentQuestion.correctAnswer = line.replace('Correct Answer:', '').trim().charAt(0);
+          } else if (line.startsWith('Explanation:')) {
+            currentQuestion.explanation = line.replace('Explanation:', '').trim();
+          }
+        });
+      }
+    });
+
+    if (currentQuestion && currentQuestion.question) {
+      mediumQuestions.push(currentQuestion);
+    }
+
+    // Format medium questions
+    const formattedMedium = mediumQuestions.slice(0, 10).map(q => ({
+      question: q.question || "Intermediate programming question",
+      options: q.options.length >= 4 ? q.options : [
+        "O(n) time complexity",
+        "O(log n) complexity",
+        "O(n^2) complexity",
+        "Constant time complexity"
+      ],
+      correctAnswer: q.correctAnswer || "A",
+      explanation: q.explanation || "Medium difficulty concept explanation"
+    }));
+
+    res.status(200).json({
+      success: true,
+      questions: formattedMedium
+    });
+
+  } catch (error) {
+    console.error("Medium Check Error:", error);
+    res.status(500).json({
+      error: "Failed to generate medium quiz",
+      message: error.message
+    });
+  }
+});
+
+app.post("/KnowledgeCheckHard", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+
+    
+    if (!videoId?.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      return res.status(400).json({ error: "Invalid YouTube video ID format" });
+    }
+
+    
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ").substring(0, 30000);
+
+    const genAI = new GoogleGenerativeAI(KEY3);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate 10 advanced programming quiz questions based on this transcript:
+    ${transcriptText}
+
+    Format EXACTLY like this:
+    Question 1:
+    Question: [Complex algorithm question]
+    Options:
+    A) [Option 1]
+    B) [Option 2]
+    C) [Option 3]
+    D) [Option 4]
+    Correct Answer: [Letter]
+    Technical Analysis: [Detailed analysis]`;
+
+    let retries = 3;
+    let result;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        result = await model.generateContent(prompt, {
+          timeout: 30000  
+        });
+        break;
+      } catch (error) {
+        if (attempt === retries) throw error;
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+        console.log(`Retry attempt ${attempt}`);
+      }
+    }
+
+    const rawOutput = (await result.response).text();
+    
+    
+    const hardQuestions = [];
+    const questionBlocks = rawOutput.split(/Question\s+\d+:/i).filter(b => b.trim());
+    
+    for (const block of questionBlocks) {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      const questionObj = {
+        question: null,
+        options: [],
+        correctAnswer: null,
+        analysis: null
+      };
+
+      for (const line of lines) {
+        if (line.startsWith('Question:')) {
+          questionObj.question = line.replace('Question:', '').trim();
+        } else if (/^[A-D]\)/.test(line)) {
+          questionObj.options.push(line.replace(/^[A-D]\)\s*/, '').trim());
+        } else if (line.startsWith('Correct Answer:')) {
+          questionObj.correctAnswer = line.replace('Correct Answer:', '').trim().charAt(0).toUpperCase();
+        } else if (line.startsWith('Technical Analysis:')) {
+          questionObj.analysis = line.replace('Technical Analysis:', '').trim();
+        }
+      }
+
+      if (questionObj.question && questionObj.options.length >= 4) {
+        hardQuestions.push(questionObj);
+      }
+    }
+
+    // Format response
+    const formattedQuestions = hardQuestions.slice(0, 10).map((q, index) => ({
+      id: index + 1,
+      question: q.question || `Advanced Question ${index + 1}`,
+      options: q.options,
+      correctAnswer: ['A','B','C','D'].includes(q.correctAnswer) ? q.correctAnswer : 'A',
+      analysis: q.analysis || "Detailed technical analysis not available"
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: formattedQuestions.length,
+      questions: formattedQuestions
+    });
+
+  } catch (error) {
+    console.error("Hard Check Error:", error);
+    const statusCode = error.message.includes('timeout') ? 504 : 500;
+    res.status(statusCode).json({
+      success: false,
+      error: "Failed to generate hard quiz",
+      message: error.message.replace(/\[GoogleGenerativeAI Error\]:\s*/gi, '')
+    });
+  }
+});
+
+app.listen(3000, () => { 
   console.log("Server is running at port 3000");
 });
