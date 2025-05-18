@@ -982,6 +982,6 @@ app.post("/KnowledgeCheckHard", async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+app.listen(3000, () => { 
   console.log("Server is running at port 3000");
 });
