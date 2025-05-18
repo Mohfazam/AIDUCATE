@@ -10,6 +10,8 @@ interface TheorySectionProps {
 }
 
 export function TheorySection({ section, index, isActive, onToggle }: TheorySectionProps) {
+  // @ts-ignore
+  const randomPoints = Math.floor(Math.random() * 11) + 20;
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}

@@ -43,6 +43,7 @@ export async function fetchTheoryData(videoId: string): Promise<TheoryContent> {
       'http://localhost:3000/SummaryMain',
       { videoId }
     );
+    console.log('main',mainResponse,mainResponse.data)
 
     // Log responses for debugging
     console.log('SummarySubPoints response:', subPointsResponse.data);

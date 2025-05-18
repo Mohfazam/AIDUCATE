@@ -12,7 +12,7 @@ export const YouTubeLearningPortal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracted, setIsExtracted] = useState(false);
   const [greeting, setGreeting] = useState('');
-
+const [history, setHistory] = useState<string[]>([]);
   // Component initialization
   useEffect(() => {
     // Set greeting based on time of day
@@ -41,7 +41,11 @@ export const YouTubeLearningPortal = () => {
     const match = url.match(regex);
     return (match && match[2].length === 11) ? match[2] : null;
   };
-
+const updateHistory = (urlToSave: string) => {
+    const updatedHistory = [urlToSave, ...history.filter(item => item !== urlToSave)].slice(0, 10);
+    setHistory(updatedHistory);
+    localStorage.setItem('youtubeUrlHistory', JSON.stringify(updatedHistory));
+  };
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     if (isExtracted) {
@@ -67,7 +71,7 @@ export const YouTubeLearningPortal = () => {
         toast.error('Invalid YouTube URL');
         return;
       }
-
+updateHistory(urlToAnalyze);
       setVideoId(extractedId);
       localStorage.setItem('currentVideoId', extractedId);
       setIsExtracted(true);

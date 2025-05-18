@@ -7,6 +7,7 @@ interface TheoryHeaderProps {
 }
 
 export function TheoryHeader({ content }: TheoryHeaderProps) {
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
