@@ -86,54 +86,59 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
 
   useEffect(() => {
     console.log('CodeQuiz mounted, initial quizzes:', quizzes);
+
     const fetchQuizzes = async () => {
-      try {
-        const videoId = localStorage.getItem('currentVideoId');
-        if (!videoId) {
-          console.log('No video ID found, using default quizzes');
-          setError('No video ID found, showing default quizzes');
-          setQuizzes(DEFAULT_QUIZZES);
-          setLoading(false);
-          return;
-        }
-
-        setLoading(true);
-        const response = await axios.post<ApiResponse>('http://localhost:3000/CodeDojoQuiz', {
-          videoId,
-        });
-
-        if (!response.data.success) {
-          throw new Error('CodeDojoQuiz API returned success: false');
-        }
-
-        const apiQuizzes = response.data.quiz || [];
-        const validQuizzes: Quiz[] = apiQuizzes
-          .filter(
-            (quiz: ApiQuiz) =>
-              quiz.question &&
-              Array.isArray(quiz.options) &&
-              quiz.options.length === 4 &&
-              typeof quiz.answer === 'string' &&
-              quiz.explanation,
-          )
-          .map((quiz: ApiQuiz) => ({
-            question: quiz.question,
-            options: quiz.options,
-            correctIndex: answerToIndex(quiz.answer),
-            explanation: quiz.explanation,
-            tips: quiz.tips || [], // Use API tips if provided, else empty
-          }));
-
-        console.log('Fetched quizzes:', validQuizzes);
-        setQuizzes([...DEFAULT_QUIZZES, ...validQuizzes]);
-      } catch (err) {
-        console.error('Error fetching quizzes:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch quizzes';
-        setError(errorMessage);
-        setQuizzes(DEFAULT_QUIZZES);
-      } finally {
+      const videoId = localStorage.getItem('currentVideoId');
+      if (!videoId) {
+        console.log('No video ID found');
+        setError('No video ID found');
         setLoading(false);
+        return;
       }
+
+      setLoading(true);
+
+      const fetchWithRetry = async (retryDelay = 2000) => {
+        try {
+          const response = await axios.post<ApiResponse>('http://localhost:3000/CodeDojoQuiz', {
+            videoId,
+          });
+
+          if (!response.data.success) {
+            throw new Error('CodeDojoQuiz API returned success: false');
+          }
+
+          const apiQuizzes = response.data.quiz || [];
+          const validQuizzes: Quiz[] = apiQuizzes
+            .filter(
+              (quiz: ApiQuiz) =>
+                quiz.question &&
+                Array.isArray(quiz.options) &&
+                quiz.options.length === 4 &&
+                typeof quiz.answer === 'string' &&
+                quiz.explanation,
+            )
+            .map((quiz: ApiQuiz) => ({
+              question: quiz.question,
+              options: quiz.options,
+              correctIndex: answerToIndex(quiz.answer),
+              explanation: quiz.explanation,
+              tips: quiz.tips || [],
+            }));
+
+          console.log('Fetched quizzes:', validQuizzes);
+          setQuizzes([...DEFAULT_QUIZZES, ...validQuizzes]);
+          setError(null);
+        } catch (err) {
+          console.error(`Fetch failed, retrying in ${retryDelay / 1000}s...`, err);
+          setError('Retrying to fetch quizzes...');
+          setTimeout(() => fetchWithRetry(Math.min(retryDelay * 2, 16000)), retryDelay); // exponential backoff
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchWithRetry();
     };
 
     fetchQuizzes();
@@ -223,9 +228,8 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
                   key={index}
                   onClick={() => handleAnswerSelect(index)}
                   disabled={selectedAnswer !== null}
-                  className={`w-full p-3 rounded-lg text-left transition-all border-2 ${bgColor} ${
-                    selectedAnswer === null ? 'hover:bg-slate-600 cursor-pointer' : 'cursor-default'
-                  }`}
+                  className={`w-full p-3 rounded-lg text-left transition-all border-2 ${bgColor} ${selectedAnswer === null ? 'hover:bg-slate-600 cursor-pointer' : 'cursor-default'
+                    }`}
                   whileHover={selectedAnswer === null ? { scale: 1.02 } : undefined}
                 >
                   <div className="flex items-center justify-between">

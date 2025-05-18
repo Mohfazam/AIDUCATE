@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, ChevronRight, AlertCircle } from 'lucide-react';
 import axios from 'axios';
@@ -114,6 +114,9 @@ const DEFAULT_CHALLENGES: Challenge[] = [
 ];
 
 // Parse sampleInput string to test case input
+interface CodeChallengesProps {
+  onSelectChallenge: (challenge: Challenge) => void;
+}
 const parseSampleInput = (sampleInput: string): any[] => {
   try {
     // Example: "candidates = [2, 3, 5], target = 8" -> [[2, 3, 5], 8]
@@ -153,41 +156,115 @@ const parseSampleOutput = (sampleOutput: string, difficulty: string): any => {
 };
 
 export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
-  const [challenges, setChallenges] = useState<Challenge[]>(DEFAULT_CHALLENGES);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<Record<string, number>>({
+    Easy: 0,
+    Medium: 0,
+    Hard: 0
+  });
   const [selectedCategory, setSelectedCategory] = useState<Challenge['difficulty']>('Easy');
+  const [retryActive, setRetryActive] = useState(true);
+  const [retryInProgress, setRetryInProgress] = useState(false);
+  //@ts-ignore
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    const fetchChallenges = async () => {
-      try {
-        const videoId = localStorage.getItem('currentVideoId');
-        if (!videoId) {
-          console.log('No video ID found, using default challenges');
-          setError('No video ID found, showing default challenges');
-          setChallenges(DEFAULT_CHALLENGES);
-          setLoading(false);
-          return;
-        }
+  // Function to fetch from a single endpoint with retry logic
+  const fetchWithRetry = async (url: string, videoId: string, difficulty: string): Promise<ApiProblem[]> => {
+    // Reset retry count for this endpoint when starting a fresh fetch
+    if (retryCount[difficulty] === 0) {
+      setRetryCount(prev => ({ ...prev, [difficulty]: 1 }));
+    }
 
-        setLoading(true);
+    try {
+      // Create new AbortController for this request
+      abortControllerRef.current = new AbortController();
 
-        // Fetch from all three endpoints
-        const endpoints = [
-          { url: 'http://localhost:3000/CodeDojoEasy', difficulty: 'Easy' },
-          { url: 'http://localhost:3000/CodeDojoMedium', difficulty: 'Medium' },
-          { url: 'http://localhost:3000/CodeDojoHard', difficulty: 'Hard' },
-        ];
+      const response = await axios.post<ApiResponse>(
+        url,
+        { videoId },
+        { signal: abortControllerRef.current.signal }
+      );
 
-        const fetchedChallenges: Challenge[] = [];
+      if (!response.data.success) {
+        throw new Error(`${difficulty} API returned success: false`);
+      }
 
-        for (const { url, difficulty } of endpoints) {
-          const response = await axios.post<ApiResponse>(url, { videoId });
-          if (!response.data.success) {
-            throw new Error(`${difficulty} API returned success: false`);
-          }
+      // Reset retry count on success
+      setRetryCount(prev => ({ ...prev, [difficulty]: 0 }));
 
-          const problems = response.data.problems || [];
+      return response.data.problems || [];
+    } catch (error) {
+      // Don't retry if the request was aborted
+      if (axios.isCancel(error)) {
+        console.log(`${difficulty} request was cancelled`);
+        throw error;
+      }
+
+      // Increment retry count for this endpoint
+      const newRetryCount = retryCount[difficulty] + 1;
+      setRetryCount(prev => ({ ...prev, [difficulty]: newRetryCount }));
+
+      console.log(`Retry attempt ${newRetryCount} for ${difficulty}`);
+
+      // Calculate backoff delay (exponential backoff with a cap)
+      const backoffDelay = Math.min(Math.pow(1.5, newRetryCount) * 1000, 10000);
+
+      // If retry is active, wait and try again
+      if (retryActive) {
+        console.log(`Retrying ${difficulty} in ${backoffDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        return fetchWithRetry(url, videoId, difficulty);
+      } else {
+        throw error;
+      }
+    }
+  };
+
+  const cancelRetries = () => {
+    setRetryActive(false);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setLoading(false);
+    setError("API calls cancelled. Try refreshing the page to retry.");
+  };
+
+  const resetAndRetry = () => {
+    setRetryActive(true);
+    setRetryCount({ Easy: 0, Medium: 0, Hard: 0 });
+    setError(null);
+    setChallenges([]);
+    fetchChallenges();
+  };
+
+  const fetchChallenges = async () => {
+    const videoId = localStorage.getItem('currentVideoId');
+    if (!videoId) {
+      console.log('No video ID found');
+      setError('No video ID found. Please set a video ID.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setRetryInProgress(true);
+
+    // Fetch from all three endpoints
+    const endpoints = [
+      { url: 'http://localhost:3000/CodeDojoEasy', difficulty: 'Easy' },
+      { url: 'http://localhost:3000/CodeDojoMedium', difficulty: 'Medium' },
+      { url: 'http://localhost:3000/CodeDojoHard', difficulty: 'Hard' },
+    ];
+
+    try {
+      const fetchedChallenges: Challenge[] = [];
+
+      for (const { url, difficulty } of endpoints) {
+        try {
+          const problems = await fetchWithRetry(url, videoId, difficulty);
+
           const mappedChallenges = problems.map((problem: ApiProblem) => ({
             difficulty: difficulty as 'Easy' | 'Medium' | 'Hard',
             title: problem.title,
@@ -224,44 +301,130 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
           }));
 
           fetchedChallenges.push(...mappedChallenges);
+        } catch (error) {
+          // If any endpoint fails after retries, we'll continue trying
+          if (!axios.isCancel(error)) {
+            console.error(`Failed to fetch ${difficulty} challenges:`, error);
+          }
         }
+      }
 
+      // Only update state if we have challenges or if user cancelled
+      if (fetchedChallenges.length > 0) {
         console.log('Fetched challenges:', fetchedChallenges);
-        setChallenges([...DEFAULT_CHALLENGES, ...fetchedChallenges]);
-      } catch (err) {
-        console.error('Error fetching challenges:', err);
-        setError('Failed to fetch challenges, showing default challenges');
-        setChallenges(DEFAULT_CHALLENGES);
-      } finally {
+        setChallenges(fetchedChallenges);
+        setError(null);
+        setRetryInProgress(false);
         setLoading(false);
+      } else if (!retryActive) {
+        setRetryInProgress(false);
+      } else {
+        // If we have no challenges but retries are active, start over
+        console.log('No challenges fetched, retrying all endpoints...');
+        setTimeout(() => fetchChallenges(), 2000);
+      }
+    } catch (err) {
+      // This catch will only execute if the retry loop is broken
+      console.error('Fatal error fetching challenges:', err);
+      setError('Fatal error fetching challenges. Please try again later.');
+      setRetryInProgress(false);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChallenges();
+
+    // Cleanup function to abort any pending requests when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
-
-    fetchChallenges();
   }, []);
 
   // Ensure selectedCategory has challenges
   useEffect(() => {
-    const availableCategories = Array.from(new Set(challenges.map(c => c.difficulty)));
-    if (!availableCategories.includes(selectedCategory)) {
-      console.log(`No challenges for ${selectedCategory}, switching to Easy`);
-      setSelectedCategory('Easy');
+    if (challenges.length > 0) {
+      const availableCategories = Array.from(new Set(challenges.map(c => c.difficulty)));
+      if (!availableCategories.includes(selectedCategory)) {
+        console.log(`No challenges for ${selectedCategory}, switching to available category`);
+        setSelectedCategory(availableCategories[0] || 'Easy');
+      }
     }
   }, [challenges, selectedCategory]);
 
   const categories: Challenge['difficulty'][] = ['Easy', 'Medium', 'Hard', 'CP'];
   const filteredChallenges = challenges.filter(c => c.difficulty === selectedCategory);
 
-  console.log('Rendering challenges, selectedCategory:', selectedCategory, 'filteredChallenges:', filteredChallenges);
-
-  if (loading) {
+  if (loading && retryInProgress) {
     return (
-      <div className="flex justify-center p-8">
+      <div className="flex flex-col items-center justify-center p-8 space-y-6">
         <motion.div
+          className="relative w-48 h-48 mx-auto"
+          initial={{ rotate: 0 }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="h-12 w-12 border-4 border-purple-500 border-t-transparent rounded-full"
-        />
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+        >
+          <motion.div
+            className="absolute w-full h-full border-4 border-purple-500/30 rounded-full"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.8, 0.4, 0.8],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          {[...Array(12)].map((_, i) => (
+            <motion.span
+              key={i}
+              className="absolute text-purple-400 font-mono font-bold"
+              style={{
+                left: `${Math.cos((i * 30 * Math.PI) / 180) * 70 + 50}%`,
+                top: `${Math.sin((i * 30 * Math.PI) / 180) * 70 + 50}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              animate={{
+                opacity: [0, 1, 0],
+                scale: [0.8, 1.2, 0.8],
+              }}
+              transition={{
+                duration: 1.5,
+                delay: i * 0.1,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              {i % 2 === 0 ? '1' : '0'}
+            </motion.span>
+          ))}
+          <motion.div
+            className="absolute inset-0 m-auto w-16 h-16 bg-purple-500 rounded-full"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.9, 1, 0.9],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+        </motion.div>
+
+        {/* <button 
+          onClick={cancelRetries}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+        >
+          Cancel Retries
+        </button> */}
       </div>
     );
   }
@@ -276,9 +439,18 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-xl text-red-400 flex items-center gap-2 mb-4">
-          <AlertCircle className="h-5 w-5" />
-          {error}
+        <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-xl text-red-400 flex flex-col items-start gap-4">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p>{error}</p>
+          </div>
+          {/* <button 
+            onClick={resetAndRetry}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          >
+            <RefreshCw size={16} />
+            Retry API Calls
+          </button> */}
         </div>
       )}
 
@@ -287,11 +459,10 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedCategory === category
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCategory === category
                 ? 'bg-purple-500 text-white'
                 : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-            }`}
+              }`}
           >
             {category}
           </button>
@@ -327,7 +498,11 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
         ) : (
           <div className="p-4 bg-slate-800/50 rounded-xl text-slate-400 flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
-            No challenges available for {selectedCategory} category. Select 'Easy' for default challenges.
+            <p>
+              {retryInProgress
+                ? "Attempting to fetch challenges..."
+                : "No challenges available for this category."}
+            </p>
           </div>
         )}
       </div>

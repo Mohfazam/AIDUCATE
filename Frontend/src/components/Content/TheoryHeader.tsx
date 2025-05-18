@@ -57,7 +57,7 @@ export function TheoryHeader({ content }: TheoryHeaderProps) {
           <div className="flex items-center gap-2 px-4 py-2 bg-teal-900/30 rounded-lg border border-teal-700/30">
             <Award className="w-5 h-5 text-teal-400" />
             <span className="text-teal-300">
-              {content.sections.reduce((total, section) => total + section.theory.points, 0)} Points
+              {content.sections.reduce((total, section) => total + section.theory.points, Math.floor(Math.random() * (200 - 150 + 1)) + 150)} Points
             </span>
           </div>
         </motion.div>
