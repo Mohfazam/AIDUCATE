@@ -186,6 +186,84 @@ app.post("/SummaryMain", async (req, res) => {
   }
 });
 
+app.post("/SummarySubPoints", async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptText = transcript.map(item => item.text).join(" ");
+
+    const genAI = new GoogleGenerativeAI(KEY1);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Analyze this video transcript and generate for EACH important section:
+    1. Timestamp (HH:MM:SS)
+    2. Section title (5-7 words)
+    3. Subtitle (short phrase)
+    4. 20-30 word summary
+    5. 3 bullet point tips
+    Format EXACTLY like this between triple quotes:
+    """
+    [HH:MM:SS]
+    Title: [Section Title]
+    Subtitle: [Descriptive Subtitle]
+    Summary: [Concise summary]
+    Tips:
+    - [Practical tip 1]
+    - [Practical tip 2]
+    - [Practical tip 3]
+    """
+    Include 3-5 sections. Transcript: ${transcriptText}`;
+
+    const result = await model.generateContent(prompt);
+    const rawOutput = await result.response.text();
+
+    // Enhanced parsing logic
+    const sections = rawOutput.split('"""').filter(s => s.trim());
+    const subPoints = [];
+
+    sections.forEach(section => {
+      const lines = section.split('\n').filter(line => line.trim());
+      
+      const entry = {
+        timestamp: lines[0]?.match(/\d{2}:\d{2}:\d{2}/)?.[0] || null,
+        title: null,
+        subtitle: null,
+        summary: null,
+        tips: []
+      };
+
+      lines.forEach(line => {
+        if (line.startsWith('Title:')) entry.title = line.replace('Title:', '').trim();
+        if (line.startsWith('Subtitle:')) entry.subtitle = line.replace('Subtitle:', '').trim();
+        if (line.startsWith('Summary:')) entry.summary = line.replace('Summary:', '').trim();
+        if (line.startsWith('-')) entry.tips.push(line.replace('-', '').trim());
+      });
+
+      if (entry.timestamp && entry.title && entry.tips.length >= 3) {
+        subPoints.push({
+          timestamp: entry.timestamp,
+          title: entry.title,
+          subtitle: entry.subtitle || "Key Concepts", // Default subtitle
+          summary: entry.summary || "Essential insights from this section",
+          tips: entry.tips.slice(0, 3)
+        });
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      subPoints: subPoints.length > 0 ? subPoints : [{ error: "No sections generated" }]
+    });
+
+  } catch (error) {
+    console.error("SubPoints error:", error);
+    res.status(500).json({
+      error: "Failed to generate subpoints",
+      message: error.message
+    });
+  }
+});
+
 
 
 app.listen(3000, () => {
