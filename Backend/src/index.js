@@ -26,6 +26,12 @@ mongoose
 app.use(express.json());
 app.use(cors());
 
+app.get("/Health", (req, res) => {
+  res.json({
+    msg: "Everything Works fine till now"
+  });
+});
+
 app.post("/Signup", async (req, res) => {
   try {
     const username = req.body.username;
