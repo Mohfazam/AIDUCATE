@@ -1,112 +1,62 @@
 const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
-require('dotenv').config();
+const { ApifyClient } = require("apify-client");
+const dotenv = require("dotenv");
+const path = require("path");
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-// YouTube.js setup with CommonJS
-async function getYouTubeInstance() {
-    const { Innertube } = await import('youtubei.js/web');
-    return Innertube.create({
-        lang: 'en',
-        location: 'US',
-        retrieve_player: false,
-        fetch_options: {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
-            }
-        }
-    });
-}
+// Initialize Apify client
+const client = new ApifyClient({
+  token: process.env.APIFY_TOKEN || "apify_api_Wr0I6F8DwfbozMeURjCOFl9YwPd8C51D8Sbo",
+});
+
+// Initialize Google Generative AI
+const KEY4 = process.env.KEY4;
+// 
+const genAI = new GoogleGenerativeAI(KEY4); // This doesnt work
+// const genAI = new GoogleGenerativeAI('AIzaSyBOo1TAby608SVJl5tsAWYv-4-tcQtWweI'); // This works
 
 app.use(express.json());
 
-app.post("/Summary", async (req, res) => {
-    try {
-        const { videoId } = req.body;
-
-        // Validate video ID
-        if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-            return res.status(400).json({ 
-                success: false,
-                error: "Invalid YouTube Video ID format" 
-            });
-        }
-
-        // Get YouTube instance
-        const youtube = await getYouTubeInstance();
-        
-        // First check basic availability
-        const basicInfo = await youtube.getBasicInfo(videoId);
-        if (basicInfo.playability_status.status !== 'OK') {
-            return res.status(400).json({
-                success: false,
-                error: "Video unavailable",
-                reason: basicInfo.playability_status.reason || 'Not available in your region/country'
-            });
-        }
-
-        // Get full video info
-        const info = await youtube.getInfo(videoId);
-        
-        // Check transcript availability
-        if (!info.has_transcript) {
-            return res.status(400).json({
-                success: false,
-                error: "Transcript disabled",
-                message: "This video does not have captions available"
-            });
-        }
-
-        // Fetch transcript
-        const transcriptData = await info.getTranscript();
-        const transcriptText = transcriptData.transcript.content.body.initial_segments
-            .map(segment => segment.snippet.text)
-            .join(" ");
-
-        // Generate summary
-        const genAI = new GoogleGenerativeAI(process.env.KEY1);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        
-        const prompt = `Generate a concise 200-word summary of this video transcript:\n\n${transcriptText}`;
-        const result = await model.generateContent(prompt);
-        const summary = await result.response.text();
-
-        res.status(200).json({
-            success: true,
-            summary: summary.trim(),
-            videoDetails: {
-                title: basicInfo.basic_info.title,
-                duration: basicInfo.basic_info.duration,
-                channel: basicInfo.basic_info.author
-            }
-        });
-
-    } catch (error) {
-        console.error("Summary Error:", error);
-        
-        const errorInfo = {
-            success: false,
-            error: "Failed to generate summary",
-            message: error.message,
-            type: "PROCESSING_ERROR"
-        };
-
-        if (error.info?.playability_status) {
-            errorInfo.type = "VIDEO_UNAVAILABLE";
-            errorInfo.message = error.info.playability_status.reason;
-        }
-
-        if (error.message.includes("Transcript disabled")) {
-            errorInfo.type = "TRANSCRIPT_DISABLED";
-            errorInfo.message = "Captions are disabled for this video";
-        }
-
-        const statusCode = errorInfo.type === "VIDEO_UNAVAILABLE" ? 400 : 500;
-        res.status(statusCode).json(errorInfo);
+app.post("/summary", async (req, res) => { // Changed to lowercase for consistency
+  try {
+    const { videoId } = req.body;
+    if (!videoId) {
+      return res.status(400).json({ success: false, error: "Missing videoId" });
     }
+
+    const input = {
+      video_url: `https://www.youtube.com/watch?v=${videoId}`,
+    };
+
+    // Run Apify actor
+    const run = await client.actor("invideoiq/video-transcript-scraper").call(input);
+    const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+    if (!items || items.length === 0) {
+      return res.status(404).json({ success: false, error: "No transcript found" });
+    }
+
+    const transcriptText = items.map(item => item.text).join(" ");
+    
+    // Generate summary
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = `Summarize this YouTube transcript in 200 words:\n${transcriptText}`;
+    const result = await model.generateContent(prompt);
+    const summary = (await result.response).text();
+
+    res.json({ success: true, summary });
+
+  } catch (error) {
+    console.error("Summary error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate summary",
+      message: error.message
+    });
+  }
 });
 
-const PORT = 8080;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
