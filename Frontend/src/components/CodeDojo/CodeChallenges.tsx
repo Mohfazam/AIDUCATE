@@ -40,7 +40,7 @@ interface ApiResponse {
   success: boolean;
   problems: ApiProblem[];
 }
-
+//@ts-ignore
 const DEFAULT_CHALLENGES: Challenge[] = [
   {
     difficulty: 'Easy',
@@ -165,6 +165,7 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
     Hard: 0
   });
   const [selectedCategory, setSelectedCategory] = useState<Challenge['difficulty']>('Easy');
+  //@ts-ignore
   const [retryActive, setRetryActive] = useState(true);
   const [retryInProgress, setRetryInProgress] = useState(false);
   //@ts-ignore
@@ -220,23 +221,6 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
         throw error;
       }
     }
-  };
-
-  const cancelRetries = () => {
-    setRetryActive(false);
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    setLoading(false);
-    setError("API calls cancelled. Try refreshing the page to retry.");
-  };
-
-  const resetAndRetry = () => {
-    setRetryActive(true);
-    setRetryCount({ Easy: 0, Medium: 0, Hard: 0 });
-    setError(null);
-    setChallenges([]);
-    fetchChallenges();
   };
 
   const fetchChallenges = async () => {
@@ -418,13 +402,6 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
             }}
           />
         </motion.div>
-
-        {/* <button 
-          onClick={cancelRetries}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-        >
-          Cancel Retries
-        </button> */}
       </div>
     );
   }
@@ -444,13 +421,6 @@ export const CodeChallenges = ({ onSelectChallenge }: CodeChallengesProps) => {
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
             <p>{error}</p>
           </div>
-          {/* <button 
-            onClick={resetAndRetry}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            <RefreshCw size={16} />
-            Retry API Calls
-          </button> */}
         </div>
       )}
 
