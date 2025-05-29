@@ -21,7 +21,7 @@ interface QuizQuestion {
   explanation: string;
   hint?: string;
 }
-
+//@ts-ignore
 interface QuizQuestions {
   easy: QuizQuestion[];
   medium: QuizQuestion[];
@@ -60,47 +60,43 @@ const fetchWithRetry = async (
     }
   }
 };
-
-export const getQuestions = async (): Promise<QuizQuestions> => {
+export const getQuestions = async (difficulty: 'easy' | 'medium' | 'hard'): Promise<QuizQuestion[]> => {
   const videoId = localStorage.getItem('currentVideoId');
   if (!videoId) {
     throw new Error('No video ID found. Please select a video.');
   }
 
-  const endpoints = [
-    { url: 'http://localhost:3000/KnowledgeCheckEasy', difficulty: 'easy' },
-    { url: 'http://localhost:3000/KnowledgeCheckMedium', difficulty: 'medium' },
-    { url: 'http://localhost:3000/KnowledgeCheckHard', difficulty: 'hard' },
-  ];
+  const endpointMap = {
+    easy: 'http://localhost:3000/KnowledgeCheckEasy',
+    medium: 'http://localhost:3000/KnowledgeCheckMedium',
+    hard: 'http://localhost:3000/KnowledgeCheckHard',
+  };
 
-  const result: QuizQuestions = { easy: [], medium: [], hard: [] };
+  const url = endpointMap[difficulty];
 
-  for (const { url, difficulty } of endpoints) {
-    const data = await fetchWithRetry(url, { videoId });
-    const questions = data.questions || [];
-    const mappedQuestions: QuizQuestion[] = questions
-      .filter(
-        (q: ApiQuestion) =>
-          q.question &&
-          Array.isArray(q.options) &&
-          q.options.length === 4 &&
-          typeof q.correctAnswer === 'string',
-      )
-      .map((q: ApiQuestion) => ({
-        question: q.question,
-        options: q.options,
-        correct: answerToIndex(q.correctAnswer),
-        explanation: q.explanation || 'Review the problem constraints and solution approach.',
-        hint: q.hint || `Consider the key concepts in: ${q.question.slice(0, 50)}...`,
-      }));
+  const data = await fetchWithRetry(url, { videoId });
+  const questions = data.questions || [];
 
-    if (mappedQuestions.length === 0) {
-      console.warn(`No valid questions received from ${url}`);
-    }
+  const mappedQuestions: QuizQuestion[] = questions
+    .filter(
+      (q: ApiQuestion) =>
+        q.question &&
+        Array.isArray(q.options) &&
+        q.options.length === 4 &&
+        typeof q.correctAnswer === 'string',
+    )
+    .map((q: ApiQuestion) => ({
+      question: q.question,
+      options: q.options,
+      correct: answerToIndex(q.correctAnswer),
+      explanation: q.explanation || 'Review the problem constraints and solution approach.',
+      hint: q.hint || `Consider the key concepts in: ${q.question.slice(0, 50)}...`,
+    }));
 
-    result[difficulty as keyof QuizQuestions] = mappedQuestions;
+  if (mappedQuestions.length === 0) {
+    console.warn(`No valid questions received for difficulty: ${difficulty}`);
   }
 
-  console.log('Fetched questions:', result);
-  return result;
+  console.log(`Fetched ${difficulty} questions:`, mappedQuestions);
+  return mappedQuestions;
 };
