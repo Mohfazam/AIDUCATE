@@ -8,14 +8,14 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 // Initialize Apify client
 const client = new ApifyClient({
-  token: process.env.APIFY_TOKEN || "apify_api_Wr0I6F8DwfbozMeURjCOFl9YwPd8C51D8Sbo",
+  token: process.env.APIFY_API_TOKEN,
 });
 
 // Initialize Google Generative AI
 const KEY4 = process.env.KEY4;
 // 
 const genAI = new GoogleGenerativeAI(KEY4); // This doesnt work
-// const genAI = new GoogleGenerativeAI('AIzaSyBOo1TAby608SVJl5tsAWYv-4-tcQtWweI'); // This works
+
 
 app.use(express.json());
 

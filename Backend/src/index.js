@@ -6,9 +6,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const { YoutubeTranscript } = require("youtube-transcript");
-const { GoogleGenerativeAI } = require("@google/generative-ai"); 
-
-let videoId;
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const UserModel = require("../models/UsersSchema");
 
@@ -17,6 +15,59 @@ const MONGOOSE_URL = process.env.MONGO_URL;
 const KEY1 = process.env.KEY1;
 const KEY2 = process.env.KEY2;
 const KEY3 = process.env.KEY3;
+
+// In-memory transcript cache
+const transcriptCache = new Map();
+const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Helper function to get transcript (with caching)
+async function getTranscript(videoId) {
+  // Check if transcript exists in cache and is not expired
+  if (transcriptCache.has(videoId)) {
+    const cached = transcriptCache.get(videoId);
+    if (Date.now() - cached.timestamp < CACHE_EXPIRY) {
+      console.log(`Using cached transcript for video: ${videoId}`);
+      return cached.transcript;
+    } else {
+      // Remove expired entry
+      transcriptCache.delete(videoId);
+    }
+  }
+
+  // Fetch new transcript
+  console.log(`Fetching new transcript for video: ${videoId}`);
+  const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+  const transcriptText = transcript.map(item => item.text).join(" ");
+  
+  // Cache the transcript
+  transcriptCache.set(videoId, {
+    transcript: transcriptText,
+    timestamp: Date.now(),
+    fullTranscript: transcript // Store full transcript with timestamps if needed
+  });
+
+  return transcriptText;
+}
+
+// Helper function to clear cache (optional - for manual cache management)
+function clearTranscriptCache(videoId = null) {
+  if (videoId) {
+    transcriptCache.delete(videoId);
+    console.log(`Cleared cache for video: ${videoId}`);
+  } else {
+    transcriptCache.clear();
+    console.log('Cleared entire transcript cache');
+  }
+}
+
+// Helper function to get cache stats (optional - for monitoring)
+function getCacheStats() {
+  return {
+    size: transcriptCache.size,
+    videos: Array.from(transcriptCache.keys()),
+    memoryUsage: process.memoryUsage()
+  };
+}
 
 mongoose
   .connect(MONGOOSE_URL)
@@ -28,8 +79,20 @@ app.use(cors());
 
 app.get("/Health", (req, res) => {
   res.json({
-    msg: "Everything Works fine till now"
+    msg: "Everything Works fine till now",
+    cacheStats: getCacheStats()
   });
+});
+
+// Cache management endpoints (optional)
+app.post("/ClearCache", (req, res) => {
+  const { videoId } = req.body;
+  clearTranscriptCache(videoId);
+  res.json({ success: true, message: videoId ? `Cache cleared for ${videoId}` : 'All cache cleared' });
+});
+
+app.get("/CacheStats", (req, res) => {
+  res.json(getCacheStats());
 });
 
 app.post("/Signup", async (req, res) => {
@@ -102,8 +165,7 @@ app.post("/Login", async (req, res) => {
 app.post("/Summary", async (req, res) => {
   try {
     const { videoId } = req.body;
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY1);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -126,8 +188,7 @@ app.post("/Summary", async (req, res) => {
 app.post("/SummaryMain", async (req, res) => {
   try {
     const { videoId } = req.body;
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY1);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -181,7 +242,7 @@ app.post("/SummaryMain", async (req, res) => {
     res.status(200).json({
       success: true,
       title: title || fallbackTitle,
-      duration: duration || transcript[transcript.length-1]?.offsetAsString || "00:00:00",
+      duration: duration || "00:00:00",
       topics: topics || String(keyTopics.length || 0),
       points: points || String(randomPoints),
       keyTopics: keyTopics.length > 0 ? keyTopics : ["No key topics identified"]
@@ -199,8 +260,7 @@ app.post("/SummaryMain", async (req, res) => {
 app.post("/SummarySubPoints", async (req, res) => {
   try {
     const { videoId } = req.body;
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY1);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -253,7 +313,7 @@ app.post("/SummarySubPoints", async (req, res) => {
         subPoints.push({
           timestamp: entry.timestamp,
           title: entry.title,
-          subtitle: entry.subtitle || "Key Concepts", // Default subtitle
+          subtitle: entry.subtitle || "Key Concepts",
           summary: entry.summary || "Essential insights from this section",
           tips: entry.tips.slice(0, 3)
         });
@@ -274,14 +334,12 @@ app.post("/SummarySubPoints", async (req, res) => {
   }
 });
 
-
 //CODE DOJO
 
 app.post("/CodeDojoEasy", async (req, res) => {
   try {
     const { videoId } = req.body;
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -309,7 +367,6 @@ app.post("/CodeDojoEasy", async (req, res) => {
     const result = await model.generateContent(prompt);
     const rawOutput = await result.response.text();
 
-    
     const easyProblems = [];
     const easySections = rawOutput.split('"""').filter(s => s.trim());
     
@@ -358,8 +415,7 @@ app.post("/CodeDojoMedium", async (req, res) => {
       return res.status(400).json({ error: "Invalid YouTube video ID" });
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -469,8 +525,7 @@ app.post("/CodeDojoHard", async (req, res) => {
       return res.status(400).json({ error: "Invalid YouTube video ID" });
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -581,8 +636,7 @@ app.post("/CodeDojoQuiz", async (req, res) => {
       return res.status(400).json({ error: "Invalid YouTube video ID" });
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -672,9 +726,9 @@ app.post("/CodeDojoQuiz", async (req, res) => {
     });
   }
 });
-
-
 //KNOWLEDGE CHECK
+
+// ========== KNOWLEDGE CHECK ENDPOINTS (UPDATED) ========== //
 
 app.post("/KnowledgeCheckEasy", async (req, res) => {
   try {
@@ -684,8 +738,8 @@ app.post("/KnowledgeCheckEasy", async (req, res) => {
       return res.status(400).json({ error: "Invalid YouTube video ID" });
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    // Use cached transcript
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY3);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -715,9 +769,8 @@ app.post("/KnowledgeCheckEasy", async (req, res) => {
     
     Transcript: ${transcriptText}`;
 
-    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const result = await model.generateContent(prompt, { timeout: 20000 });
     const rawOutput = await result.response.text();
-
 
     const questions = [];
     const questionBlocks = rawOutput.split(/(Question\s+\d+:)/).filter(b => b.trim());
@@ -788,8 +841,8 @@ app.post("/KnowledgeCheckMedium", async (req, res) => {
       return res.status(400).json({ error: "Invalid YouTube video ID" });
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ");
+    // Use cached transcript
+    const transcriptText = await getTranscript(videoId);
 
     const genAI = new GoogleGenerativeAI(KEY3);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -819,7 +872,7 @@ app.post("/KnowledgeCheckMedium", async (req, res) => {
     
     Transcript: ${transcriptText}`;
 
-    const result = await model.generateContent(prompt, { timeout: 10000 });
+    const result = await model.generateContent(prompt, { timeout: 20000 });
     const rawOutput = await result.response.text();
 
     // Medium-specific parsing
@@ -888,14 +941,13 @@ app.post("/KnowledgeCheckHard", async (req, res) => {
   try {
     const { videoId } = req.body;
 
-    
     if (!videoId?.match(/^[a-zA-Z0-9_-]{11}$/)) {
       return res.status(400).json({ error: "Invalid YouTube video ID format" });
     }
 
-    
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const transcriptText = transcript.map(item => item.text).join(" ").substring(0, 30000);
+    // Use cached transcript and truncate
+    let transcriptText = await getTranscript(videoId);
+    transcriptText = transcriptText.substring(0, 30000);
 
     const genAI = new GoogleGenerativeAI(KEY3);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -931,7 +983,6 @@ app.post("/KnowledgeCheckHard", async (req, res) => {
     }
 
     const rawOutput = (await result.response).text();
-    
     
     const hardQuestions = [];
     const questionBlocks = rawOutput.split(/Question\s+\d+:/i).filter(b => b.trim());
