@@ -18,7 +18,7 @@ interface QuizQuestion {
   explanation: string;
   hint?: string;
 }
-
+//@ts-ignore
 interface QuizQuestions {
   easy: QuizQuestion[];
   medium: QuizQuestion[];
@@ -26,7 +26,9 @@ interface QuizQuestions {
 }
 
 const Quiz = () => {
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestions | null>(null);
+  //const [quizQuestions, setQuizQuestions] = useState<QuizQuestions | null>(null);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+
   const {
     difficulty,
     score,
@@ -63,8 +65,10 @@ const Quiz = () => {
     const loadQuestions = async () => {
       setLoadingStart(Date.now());
       try {
-        const questions = await getQuestions();
+        //@ts-ignore
+        const questions = await getQuestions(difficulty);
         if (mounted) {
+        
           setQuizQuestions(questions);
           setQuestionsLoaded(true);
           setError(null);
@@ -215,7 +219,7 @@ const Quiz = () => {
     );
   }
 
-  if (quizQuestions && quizQuestions[difficulty].length === 0) {
+  if (!quizQuestions || quizQuestions.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-900 via-gray-900 to-black flex items-center justify-center">
         <div className="text-center text-white">
@@ -235,10 +239,9 @@ const Quiz = () => {
       </div>
     );
   }
-  // @ts-ignore
-  const currentQuestionData = quizQuestions[difficulty][currentQuestion];
-  // @ts-ignore
-  const totalQuestions = quizQuestions[difficulty].length;
+ 
+  const currentQuestionData = quizQuestions[currentQuestion];
+  const totalQuestions = quizQuestions.length;
   const streakBonus = Math.floor(streak / 3) * 10;
 
   const handleAnswer = (index: number) => {

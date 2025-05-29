@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 interface QuizContextType {
