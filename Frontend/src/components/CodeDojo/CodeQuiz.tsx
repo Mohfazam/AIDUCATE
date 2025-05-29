@@ -127,7 +127,7 @@ export const CodeQuiz = ({ onXpGain }: CodeQuizProps) => {
             }));
 
           console.log('Fetched quizzes:', validQuizzes);
-          setQuizzes([...DEFAULT_QUIZZES, ...validQuizzes]);
+          setQuizzes(validQuizzes);
           setError(null);
         } catch (err) {
           console.error(`Fetch failed, retrying in ${retryDelay / 1000}s...`, err);

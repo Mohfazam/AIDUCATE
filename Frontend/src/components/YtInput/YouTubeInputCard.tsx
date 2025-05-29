@@ -5,6 +5,11 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { History } from './History';
 
+interface HistoryItem {
+  url: string;
+  timestamp: number;
+}
+
 export const YouTubeLearningPortal = () => {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
@@ -12,28 +17,45 @@ export const YouTubeLearningPortal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracted, setIsExtracted] = useState(false);
   const [greeting, setGreeting] = useState('');
-const [history, setHistory] = useState<string[]>([]);
-  // Component initialization
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  
   useEffect(() => {
-    // Set greeting based on time of day
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning! Ready to learn something new?');
     else if (hour < 18) setGreeting('Good afternoon! What shall we explore today?');
     else setGreeting('Good evening! Time for some evening learning!');
 
-    // Auto-focus input
     const input = document.querySelector('input');
     if (input) input.focus();
 
-    // Check clipboard for YouTube URL
+    const savedHistory = localStorage.getItem('youtubeUrlHistory');
+    if (savedHistory) {
+      try {
+        const parsedHistory = JSON.parse(savedHistory);
+        
+        if (parsedHistory.length > 0) {
+          if (typeof parsedHistory[0] === 'string') {
+            const convertedHistory = parsedHistory.map((url: string) => ({
+              url,
+              timestamp: Date.now()
+            }));
+            setHistory(convertedHistory);
+            localStorage.setItem('youtubeUrlHistory', JSON.stringify(convertedHistory));
+          } else {
+            setHistory(parsedHistory);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing history:', error);
+      }
+    }
+
     navigator.clipboard.readText().then(text => {
       if (text.includes('youtube.com/') || text.includes('youtu.be/')) {
         setUrl(text);
         toast.info('YouTube URL detected and pasted!');
       }
-    }).catch(() => {
-      // Clipboard access denied - silent fail
-    });
+    }).catch(() => {});
   }, []);
 
   const extractVideoId = (url: string) => {
@@ -41,11 +63,29 @@ const [history, setHistory] = useState<string[]>([]);
     const match = url.match(regex);
     return (match && match[2].length === 11) ? match[2] : null;
   };
-const updateHistory = (urlToSave: string) => {
-    const updatedHistory = [urlToSave, ...history.filter(item => item !== urlToSave)].slice(0, 10);
+  
+  const updateHistory = (urlToSave: string) => {
+    const existingIndex = history.findIndex(item => item.url === urlToSave);
+    let updatedHistory: HistoryItem[];
+    
+    if (existingIndex >= 0) {
+      const newHistory = [...history];
+      newHistory.splice(existingIndex, 1);
+      updatedHistory = [
+        { url: urlToSave, timestamp: Date.now() },
+        ...newHistory
+      ];
+    } else {
+      updatedHistory = [
+        { url: urlToSave, timestamp: Date.now() },
+        ...history
+      ].slice(0, 20);
+    }
+    
     setHistory(updatedHistory);
     localStorage.setItem('youtubeUrlHistory', JSON.stringify(updatedHistory));
   };
+  
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     if (isExtracted) {
@@ -63,15 +103,19 @@ const updateHistory = (urlToSave: string) => {
     try {
       if (!urlToAnalyze) {
         toast.error('Please enter a YouTube URL');
+        setIsLoading(false);
         return;
       }
 
       const extractedId = extractVideoId(urlToAnalyze);
       if (!extractedId) {
         toast.error('Invalid YouTube URL');
+        setIsLoading(false);
         return;
       }
-updateHistory(urlToAnalyze);
+      
+      updateHistory(urlToAnalyze);
+      
       setVideoId(extractedId);
       localStorage.setItem('currentVideoId', extractedId);
       setIsExtracted(true);
@@ -85,7 +129,6 @@ updateHistory(urlToAnalyze);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900 via-gray-950 to-black text-white p-4 flex items-center justify-center relative overflow-hidden">
-      {/* Deep radial gradient background with spotlight effect */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.15)_0,_transparent_70%)]"></div>
         <div className="absolute top-[20%] left-[20%] w-[400px] h-[400px] rounded-full bg-indigo-900/30 blur-[100px]"></div>
@@ -98,9 +141,7 @@ updateHistory(urlToAnalyze);
         transition={{ duration: 0.5 }}
         className="w-full max-w-4xl relative z-10"
       >
-        {/* Main glass container */}
         <div className="backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 shadow-xl p-8 overflow-hidden relative">
-          {/* Subtle inner glow */}
           <div className="absolute inset-0 border border-white/5 rounded-2xl pointer-events-none"></div>
           
           <div className="text-center mb-8 relative">
@@ -173,7 +214,7 @@ updateHistory(urlToAnalyze);
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="backdrop-blur-xl bg-white/10 rounded-xlAAP border border-white/10 p-6 space-y-4 relative overflow-hidden"
+                  className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/10 p-6 space-y-4 relative overflow-hidden"
                 >
                   <div className="flex items-center justify-center gap-3 relative z-10">
                     <motion.div
@@ -185,7 +226,6 @@ updateHistory(urlToAnalyze);
                     <span className="text-lg text-white font-light">Processing video content...</span>
                   </div>
 
-                  {/* Thumbnail Preview */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -227,12 +267,9 @@ updateHistory(urlToAnalyze);
         </div>
       </motion.div>
 
-      {/* History Component rendered outside the main container */}
       <History 
-        onAnalyze={(url) => {
-          setUrl(url);
-          handleAnalyze(url);
-        }} 
+        onSelectUrl={setUrl}
+        currentUrl={url}
       />
     </div>
   );
